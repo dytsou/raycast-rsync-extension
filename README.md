@@ -13,8 +13,8 @@ A Raycast extension for transferring files between local and remote servers usin
 ## Installation
 
 1. Clone this repository
-2. Run `pnpm install` to install dependencies
-3. Run `pnpm run dev` to start development mode
+2. Run `npm install` to install dependencies
+3. Run `npm run dev` to start development mode
 
 ## Usage
 
@@ -42,25 +42,25 @@ A Raycast extension for transferring files between local and remote servers usin
 
 ```bash
 # Install dependencies
-pnpm install
+npm install
 
 # Start development mode
-pnpm run dev
+npm run dev
 
 # Build for production
-pnpm run build
+npm run build
 
 # Lint code
-pnpm run lint
+npm run lint
 
 # Fix linting issues
-pnpm run fix-lint
+npm run fix-lint
 
 # Run tests
-pnpm run test
+npm run test
 
 # Run tests in watch mode
-pnpm run test:watch
+npm run test:watch
 ```
 
 ## Testing
@@ -71,7 +71,7 @@ The project includes comprehensive test coverage using Vitest:
 - Component tests for UI components
 - E2E tests for upload and download workflows
 
-Run tests with `pnpm run test` or use `pnpm run test:watch` for development.
+Run tests with `npm run test` or use `npm run test:watch` for development.
 
 ## License
 
