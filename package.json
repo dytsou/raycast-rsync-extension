@@ -23,6 +23,12 @@
       "title": "Download Files Via SCP",
       "description": "Download files from a remote server using SCP",
       "mode": "view"
+    },
+    {
+      "name": "browse",
+      "title": "Browse Remote Files",
+      "description": "Browse and list files on a remote server",
+      "mode": "view"
     }
   ],
   "dependencies": {

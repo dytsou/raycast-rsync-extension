@@ -36,3 +36,14 @@ export interface ScpResult {
   message: string;
   stderr?: string;
 }
+
+/**
+ * Remote file information from ls command
+ */
+export interface RemoteFile {
+  name: string;
+  isDirectory: boolean;
+  size?: string;
+  permissions?: string;
+  modifiedDate?: string;
+}
