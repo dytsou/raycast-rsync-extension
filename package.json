@@ -3,7 +3,7 @@
   "name": "raycast-scp-extension",
   "title": "SCP File Transfer",
   "description": "Transfer files between local and remote servers using SCP with SSH config integration",
-  "icon": "assets/icon.png",
+  "icon": "icon.png",
   "author": "dytsou",
   "categories": [
     "Developer Tools",
@@ -13,13 +13,13 @@
   "commands": [
     {
       "name": "upload",
-      "title": "Upload Files via SCP",
+      "title": "Upload Files Via SCP",
       "description": "Upload local files to a remote server using SCP",
       "mode": "view"
     },
     {
       "name": "download",
-      "title": "Download Files via SCP",
+      "title": "Download Files Via SCP",
       "description": "Download files from a remote server using SCP",
       "mode": "view"
     }
