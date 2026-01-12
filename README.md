@@ -55,8 +55,24 @@ pnpm run lint
 
 # Fix linting issues
 pnpm run fix-lint
+
+# Run tests
+pnpm run test
+
+# Run tests in watch mode
+pnpm run test:watch
 ```
+
+## Testing
+
+The project includes comprehensive test coverage using Vitest:
+
+- Unit tests for utilities (SSH config parsing, validation, SCP command building)
+- Component tests for UI components
+- E2E tests for upload and download workflows
+
+Run tests with `pnpm run test` or use `pnpm run test:watch` for development.
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
