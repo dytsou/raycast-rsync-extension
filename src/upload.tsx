@@ -31,16 +31,20 @@ export default function Command() {
       const parsedHosts = parseSSHConfig();
       
       if (parsedHosts.length === 0) {
-        setError("No host entries found in SSH config file");
+        const errorMsg = "No host entries found in SSH config file";
+        setError(errorMsg);
+        console.warn('SSH config parsed but no hosts found');
       } else {
         setHosts(parsedHosts);
+        console.log(`Loaded ${parsedHosts.length} SSH host(s)`);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to parse SSH config";
+      console.error('Error loading SSH hosts:', err);
       setError(errorMessage);
       await showToast({
         style: Toast.Style.Failure,
-        title: "Error",
+        title: "Error Loading SSH Config",
         message: errorMessage,
       });
     } finally {
@@ -101,6 +105,7 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
       if (finderItems.length > 0) {
         // Use the first selected item
         setSelectedPath(finderItems[0].path);
+        console.log('Selected file from Finder:', finderItems[0].path);
       } else {
         // Fall back to file picker
         await showToast({
@@ -111,10 +116,12 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
         setSelectedPath(""); // Reset and show form
       }
     } catch (err) {
+      console.error('Error selecting files:', err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to select files";
       await showToast({
         style: Toast.Style.Failure,
-        title: "Error",
-        message: "Failed to select files",
+        title: "File Selection Error",
+        message: errorMessage,
       });
     } finally {
       setIsSelecting(false);
@@ -182,10 +189,11 @@ function RemotePathForm({
     // Validate local path
     const localValidation = validateLocalPath(localPath);
     if (!localValidation.valid) {
+      console.error('Local path validation failed:', localValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Local Path",
-        message: localValidation.error,
+        message: localValidation.error || "The specified local file or directory does not exist",
       });
       return;
     }
@@ -193,11 +201,12 @@ function RemotePathForm({
     // Validate remote path
     const remoteValidation = validateRemotePath(remotePathValue);
     if (!remoteValidation.valid) {
+      console.error('Remote path validation failed:', remoteValidation.error);
       setRemotePathError(remoteValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Remote Path",
-        message: remoteValidation.error,
+        message: remoteValidation.error || "The remote path format is invalid",
       });
       return;
     }
@@ -205,10 +214,11 @@ function RemotePathForm({
     // Validate host config
     const hostValidation = validateHostConfig(hostConfig);
     if (!hostValidation.valid) {
+      console.error('Host config validation failed:', hostValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Host Configuration",
-        message: hostValidation.error,
+        message: hostValidation.error || "The host configuration is incomplete or invalid",
       });
       return;
     }
@@ -226,6 +236,13 @@ function RemotePathForm({
     await showToast({
       style: Toast.Style.Animated,
       title: "Transferring files...",
+      message: `Uploading to ${hostConfig.host}`,
+    });
+
+    console.log('Starting upload:', {
+      host: hostConfig.host,
+      localPath,
+      remotePath,
     });
 
     try {
@@ -239,22 +256,26 @@ function RemotePathForm({
       const result = await executeScp(options);
 
       if (result.success) {
+        console.log('Upload completed successfully');
         await showToast({
           style: Toast.Style.Success,
-          title: "Transfer completed successfully",
+          title: "Upload Successful",
+          message: "Files transferred successfully",
         });
       } else {
+        console.error('Upload failed:', result.message);
         await showToast({
           style: Toast.Style.Failure,
-          title: "Transfer failed",
+          title: "Upload Failed",
           message: result.message,
         });
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error('Upload error:', err);
       await showToast({
         style: Toast.Style.Failure,
-        title: "Transfer failed",
+        title: "Upload Failed",
         message: errorMessage,
       });
     }
