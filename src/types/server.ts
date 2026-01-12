@@ -19,7 +19,7 @@ export enum TransferDirection {
 }
 
 /**
- * Options for SCP transfer operation
+ * Options for rsync transfer operation
  */
 export interface TransferOptions {
   hostConfig: SSHHostConfig;
@@ -29,9 +29,9 @@ export interface TransferOptions {
 }
 
 /**
- * Result of SCP command execution
+ * Result of rsync command execution
  */
-export interface ScpResult {
+export interface RsyncResult {
   success: boolean;
   message: string;
   stderr?: string;

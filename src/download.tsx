@@ -9,7 +9,7 @@ import {
 } from "@raycast/api";
 import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
-import { executeScp } from "./utils/scp";
+import { executeRsync } from "./utils/rsync";
 import { validateRemotePath, validateHostConfig } from "./utils/validation";
 import {
   SSHHostConfig,
@@ -227,7 +227,7 @@ function LocalPathForm({
         direction: TransferDirection.DOWNLOAD,
       };
 
-      const result = await executeScp(options);
+      const result = await executeRsync(options);
 
       if (result.success) {
         console.log("Download completed successfully");

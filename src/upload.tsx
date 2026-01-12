@@ -10,7 +10,7 @@ import {
 } from "@raycast/api";
 import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
-import { executeScp } from "./utils/scp";
+import { executeRsync } from "./utils/rsync";
 import {
   validateLocalPath,
   validateRemotePath,
@@ -278,7 +278,7 @@ function RemotePathForm({
         direction: TransferDirection.UPLOAD,
       };
 
-      const result = await executeScp(options);
+      const result = await executeRsync(options);
 
       if (result.success) {
         console.log("Upload completed successfully");

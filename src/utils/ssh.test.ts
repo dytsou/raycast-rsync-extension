@@ -12,7 +12,6 @@ describe("SSH Remote Listing", () => {
   describe("parseLsOutput", () => {
     it("should handle empty directory", () => {
       // Empty output should return empty array
-      const output = "total 0\n";
       // This would be tested if parseLsOutput was exported
       expect(true).toBe(true);
     });

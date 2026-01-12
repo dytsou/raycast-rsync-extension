@@ -2,28 +2,36 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { homedir } from "os";
 import { join } from "path";
-import { TransferOptions, TransferDirection, ScpResult } from "../types/server";
+import {
+  TransferOptions,
+  TransferDirection,
+  RsyncResult,
+} from "../types/server";
 
 const execAsync = promisify(exec);
 
 /**
- * Builds an SCP command string based on transfer options
+ * Builds an rsync command string based on transfer options
  * @param options - Transfer options including direction, paths, and host config
- * @returns The constructed SCP command string
+ * @returns The constructed rsync command string
  */
-export function buildScpCommand(options: TransferOptions): string {
+export function buildRsyncCommand(options: TransferOptions): string {
   const { hostConfig, localPath, remotePath, direction } = options;
   const configPath = join(homedir(), ".ssh", "config");
   const hostAlias = hostConfig.host;
 
-  // Base command with config file reference and recursive flag
-  const baseCommand = `scp -F ${configPath} -r`;
+  // Base command with SSH config and archive/verbose/compress flags
+  // -a: archive mode (preserves permissions, timestamps, etc., includes -r)
+  // -v: verbose
+  // -z: compress during transfer
+  // -e: specify SSH command with config file
+  const baseCommand = `rsync -e "ssh -F ${configPath}" -avz`;
 
   if (direction === TransferDirection.UPLOAD) {
-    // Upload: scp -F ~/.ssh/config -r {localPath} {hostAlias}:{remotePath}
+    // Upload: rsync -e "ssh -F ~/.ssh/config" -avz {localPath} {hostAlias}:{remotePath}
     return `${baseCommand} ${localPath} ${hostAlias}:${remotePath}`;
   } else {
-    // Download: scp -F ~/.ssh/config -r {hostAlias}:{remotePath} {localPath}
+    // Download: rsync -e "ssh -F ~/.ssh/config" -avz {hostAlias}:{remotePath} {localPath}
     return `${baseCommand} ${hostAlias}:${remotePath} ${localPath}`;
   }
 }
@@ -33,7 +41,7 @@ export function buildScpCommand(options: TransferOptions): string {
  * @param error - The error object from exec
  * @returns User-friendly error message
  */
-function parseScpError(error: {
+function parseRsyncError(error: {
   stderr?: string;
   message?: string;
   killed?: boolean;
@@ -45,7 +53,7 @@ function parseScpError(error: {
   const combinedError = `${stderr} ${message}`.toLowerCase();
 
   // Log detailed error for debugging
-  console.error("SCP Error Details:", {
+  console.error("Rsync Error Details:", {
     code: error.code,
     signal: error.signal,
     stderr: error.stderr,
@@ -99,7 +107,7 @@ function parseScpError(error: {
     return "File not found: The specified file or directory does not exist on the remote server.";
   }
   if (combinedError.includes("is a directory")) {
-    return "Target is a directory: Use a directory path or ensure the -r flag is included.";
+    return "Target is a directory: Use a directory path or ensure the path ends with a slash.";
   }
   if (combinedError.includes("not a directory")) {
     return "Target is not a directory: The destination path must be a directory.";
@@ -125,12 +133,14 @@ function parseScpError(error: {
 }
 
 /**
- * Executes an SCP command and returns the result
+ * Executes an rsync command and returns the result
  * @param options - Transfer options including direction, paths, and host config
- * @returns Promise resolving to ScpResult with success status and message
+ * @returns Promise resolving to RsyncResult with success status and message
  */
-export async function executeScp(options: TransferOptions): Promise<ScpResult> {
-  const command = buildScpCommand(options);
+export async function executeRsync(
+  options: TransferOptions,
+): Promise<RsyncResult> {
+  const command = buildRsyncCommand(options);
 
   try {
     // Execute with 5 minute timeout (300000 ms)
@@ -146,7 +156,7 @@ export async function executeScp(options: TransferOptions): Promise<ScpResult> {
     };
   } catch (error) {
     // Parse error and provide user-friendly message
-    const userMessage = parseScpError(
+    const userMessage = parseRsyncError(
       error as {
         stderr?: string;
         message?: string;

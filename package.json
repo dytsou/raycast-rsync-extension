@@ -1,9 +1,9 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "raycast-scp-extension",
+  "name": "raycast-rsync-extension",
   "version": "1.0.0",
-  "title": "SCP File Transfer",
-  "description": "Transfer files between local and remote servers using SCP with SSH config integration",
+  "title": "Rsync File Transfer",
+  "description": "Transfer files between local and remote servers using rsync with SSH config integration",
   "icon": "icon.png",
   "author": "dytsou",
   "categories": [
@@ -14,14 +14,14 @@
   "commands": [
     {
       "name": "upload",
-      "title": "Upload Files Via SCP",
-      "description": "Upload local files to a remote server using SCP",
+      "title": "Upload Files Via Rsync",
+      "description": "Upload local files to a remote server using rsync",
       "mode": "view"
     },
     {
       "name": "download",
-      "title": "Download Files Via SCP",
-      "description": "Download files from a remote server using SCP",
+      "title": "Download Files Via Rsync",
+      "description": "Download files from a remote server using rsync",
       "mode": "view"
     },
     {

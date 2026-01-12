@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { executeScp } from "../utils/scp";
+import { executeRsync } from "../utils/rsync";
 import {
   validateLocalPath,
   validateRemotePath,
@@ -93,7 +93,7 @@ describe("Error Handling E2E", () => {
     });
   });
 
-  describe("SCP Execution Errors", () => {
+  describe("Rsync Execution Errors", () => {
     it("should handle connection to unreachable host", async () => {
       const mockHost: SSHHostConfig = {
         host: "unreachable-host",
@@ -101,7 +101,7 @@ describe("Error Handling E2E", () => {
         user: "testuser",
       };
 
-      const testDir = path.join(os.tmpdir(), "scp-test-" + Date.now());
+      const testDir = path.join(os.tmpdir(), "rsync-test-" + Date.now());
       fs.mkdirSync(testDir, { recursive: true });
       const testFile = path.join(testDir, "test.txt");
       fs.writeFileSync(testFile, "test content");
@@ -113,7 +113,7 @@ describe("Error Handling E2E", () => {
         direction: TransferDirection.UPLOAD,
       };
 
-      const result = await executeScp(options);
+      const result = await executeRsync(options);
 
       expect(result.success).toBe(false);
       expect(result.message).toBeDefined();
@@ -130,7 +130,7 @@ describe("Error Handling E2E", () => {
         user: "testuser",
       };
 
-      const testDir = path.join(os.tmpdir(), "scp-test-" + Date.now());
+      const testDir = path.join(os.tmpdir(), "rsync-test-" + Date.now());
       fs.mkdirSync(testDir, { recursive: true });
       const testFile = path.join(testDir, "test.txt");
       fs.writeFileSync(testFile, "test content");
@@ -142,7 +142,7 @@ describe("Error Handling E2E", () => {
         direction: TransferDirection.UPLOAD,
       };
 
-      const result = await executeScp(options);
+      const result = await executeRsync(options);
 
       expect(result.success).toBe(false);
       expect(result.message).toBeDefined();
@@ -151,7 +151,7 @@ describe("Error Handling E2E", () => {
       fs.rmSync(testDir, { recursive: true, force: true });
     });
 
-    it("should handle missing local file in SCP execution", async () => {
+    it("should handle missing local file in rsync execution", async () => {
       const mockHost: SSHHostConfig = {
         host: "test",
         hostName: "test.example.com",
@@ -167,7 +167,7 @@ describe("Error Handling E2E", () => {
         direction: TransferDirection.UPLOAD,
       };
 
-      const result = await executeScp(options);
+      const result = await executeRsync(options);
 
       expect(result.success).toBe(false);
       expect(result.message).toBeDefined();
@@ -201,7 +201,7 @@ describe("Error Handling E2E", () => {
     });
 
     it("should pass all validations with correct inputs", () => {
-      const testDir = path.join(os.tmpdir(), "scp-test-" + Date.now());
+      const testDir = path.join(os.tmpdir(), "rsync-test-" + Date.now());
       fs.mkdirSync(testDir, { recursive: true });
       const testFile = path.join(testDir, "test.txt");
       fs.writeFileSync(testFile, "test content");

@@ -131,7 +131,7 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
       <RemoteFileListLoader
         hostConfig={hostConfig}
         remotePath={remotePathValue}
-      />
+      />,
     );
   }
 
@@ -168,7 +168,9 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
         title="Host Details"
         text={`Browsing: ${hostConfig.host}${hostConfig.hostName ? ` (${hostConfig.hostName})` : ""}`}
       />
-      {hostConfig.user && <Form.Description title="User" text={hostConfig.user} />}
+      {hostConfig.user && (
+        <Form.Description title="User" text={hostConfig.user} />
+      )}
       {hostConfig.port && (
         <Form.Description title="Port" text={hostConfig.port.toString()} />
       )}

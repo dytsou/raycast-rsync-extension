@@ -61,9 +61,21 @@ describe("Browse E2E Flow", () => {
   it("should construct paths correctly for directory navigation", () => {
     const testCases = [
       { current: "~", subdir: "documents", expected: "~/documents" },
-      { current: "/home/user", subdir: "documents", expected: "/home/user/documents" },
-      { current: "/home/user/", subdir: "documents", expected: "/home/user/documents" },
-      { current: "~/projects", subdir: "my-project", expected: "~/projects/my-project" },
+      {
+        current: "/home/user",
+        subdir: "documents",
+        expected: "/home/user/documents",
+      },
+      {
+        current: "/home/user/",
+        subdir: "documents",
+        expected: "/home/user/documents",
+      },
+      {
+        current: "~/projects",
+        subdir: "my-project",
+        expected: "~/projects/my-project",
+      },
       { current: "/var/www", subdir: "html", expected: "/var/www/html" },
     ];
 
@@ -155,7 +167,11 @@ describe("Browse E2E Flow", () => {
 
   it("should handle path construction with trailing slashes", () => {
     const pathsWithTrailingSlash = [
-      { path: "/home/user/", subdir: "documents", expected: "/home/user/documents" },
+      {
+        path: "/home/user/",
+        subdir: "documents",
+        expected: "/home/user/documents",
+      },
       { path: "~/", subdir: "projects", expected: "~/projects" },
       { path: "/var/www/", subdir: "html", expected: "/var/www/html" },
     ];

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildScpCommand } from "./scp";
+import { buildRsyncCommand } from "./rsync";
 import {
   TransferOptions,
   TransferDirection,
@@ -8,7 +8,7 @@ import {
 import { homedir } from "os";
 import { join } from "path";
 
-describe("SCP Command Builder", () => {
+describe("Rsync Command Builder", () => {
   const mockHostConfig: SSHHostConfig = {
     host: "testserver",
     hostName: "example.com",
@@ -18,7 +18,7 @@ describe("SCP Command Builder", () => {
 
   const configPath = join(homedir(), ".ssh", "config");
 
-  describe("buildScpCommand", () => {
+  describe("buildRsyncCommand", () => {
     it("should construct upload command with correct format", () => {
       const options: TransferOptions = {
         hostConfig: mockHostConfig,
@@ -27,10 +27,10 @@ describe("SCP Command Builder", () => {
         direction: TransferDirection.UPLOAD,
       };
 
-      const command = buildScpCommand(options);
+      const command = buildRsyncCommand(options);
 
       expect(command).toBe(
-        `scp -F ${configPath} -r /local/path/file.txt testserver:/remote/path/file.txt`,
+        `rsync -e "ssh -F ${configPath}" -avz /local/path/file.txt testserver:/remote/path/file.txt`,
       );
     });
 
@@ -42,14 +42,14 @@ describe("SCP Command Builder", () => {
         direction: TransferDirection.DOWNLOAD,
       };
 
-      const command = buildScpCommand(options);
+      const command = buildRsyncCommand(options);
 
       expect(command).toBe(
-        `scp -F ${configPath} -r testserver:/remote/path/file.txt /local/path/destination`,
+        `rsync -e "ssh -F ${configPath}" -avz testserver:/remote/path/file.txt /local/path/destination`,
       );
     });
 
-    it("should include recursive flag in command", () => {
+    it("should include archive flag in command", () => {
       const options: TransferOptions = {
         hostConfig: mockHostConfig,
         localPath: "/local/directory",
@@ -57,12 +57,12 @@ describe("SCP Command Builder", () => {
         direction: TransferDirection.UPLOAD,
       };
 
-      const command = buildScpCommand(options);
+      const command = buildRsyncCommand(options);
 
-      expect(command).toContain("-r");
+      expect(command).toContain("-a");
     });
 
-    it("should include config file flag in command", () => {
+    it("should include SSH config in command", () => {
       const options: TransferOptions = {
         hostConfig: mockHostConfig,
         localPath: "/local/path",
@@ -70,9 +70,9 @@ describe("SCP Command Builder", () => {
         direction: TransferDirection.UPLOAD,
       };
 
-      const command = buildScpCommand(options);
+      const command = buildRsyncCommand(options);
 
-      expect(command).toContain("-F");
+      expect(command).toContain(`-e "ssh -F ${configPath}"`);
       expect(command).toContain(configPath);
     });
 
@@ -84,7 +84,7 @@ describe("SCP Command Builder", () => {
         direction: TransferDirection.UPLOAD,
       };
 
-      const command = buildScpCommand(options);
+      const command = buildRsyncCommand(options);
 
       expect(command).toContain("testserver:");
     });
@@ -102,7 +102,7 @@ describe("SCP Command Builder", () => {
         direction: TransferDirection.DOWNLOAD,
       };
 
-      const command = buildScpCommand(options);
+      const command = buildRsyncCommand(options);
 
       expect(command).toContain("production-server:");
     });

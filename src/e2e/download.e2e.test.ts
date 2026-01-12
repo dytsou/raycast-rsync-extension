@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { validateRemotePath, validateHostConfig } from "../utils/validation";
-import { buildScpCommand } from "../utils/scp";
+import { buildRsyncCommand } from "../utils/rsync";
 import {
   TransferDirection,
   TransferOptions,
@@ -15,7 +15,7 @@ describe("Download E2E Flow", () => {
 
   beforeAll(() => {
     // Create test directory for downloads
-    testLocalDir = path.join(os.tmpdir(), "scp-e2e-download-" + Date.now());
+    testLocalDir = path.join(os.tmpdir(), "rsync-e2e-download-" + Date.now());
     fs.mkdirSync(testLocalDir, { recursive: true });
   });
 
@@ -50,7 +50,7 @@ describe("Download E2E Flow", () => {
     expect(hostValidation.valid).toBe(true);
     expect(hostValidation.error).toBeUndefined();
 
-    // Step 4: Build SCP command
+    // Step 4: Build rsync command
     const options: TransferOptions = {
       hostConfig: downloadHost,
       localPath: testLocalDir,
@@ -58,9 +58,9 @@ describe("Download E2E Flow", () => {
       direction: TransferDirection.DOWNLOAD,
     };
 
-    const command = buildScpCommand(options);
-    expect(command).toContain("scp");
-    expect(command).toContain("-r");
+    const command = buildRsyncCommand(options);
+    expect(command).toContain("rsync");
+    expect(command).toContain("-a");
     expect(command).toContain("downloadserver:");
     expect(command).toContain(remotePath);
     expect(command).toContain(testLocalDir);
@@ -130,8 +130,8 @@ describe("Download E2E Flow", () => {
       direction: TransferDirection.DOWNLOAD,
     };
 
-    const command = buildScpCommand(options);
-    expect(command).toContain("-r");
+    const command = buildRsyncCommand(options);
+    expect(command).toContain("-a");
     expect(command).toContain(remoteDir);
   });
 
@@ -164,7 +164,7 @@ describe("Download E2E Flow", () => {
     });
   });
 
-  it("should build correct SCP command for download", () => {
+  it("should build correct rsync command for download", () => {
     const downloadHost: SSHHostConfig = {
       host: "backup",
       hostName: "backup.example.com",
@@ -179,10 +179,10 @@ describe("Download E2E Flow", () => {
       direction: TransferDirection.DOWNLOAD,
     };
 
-    const command = buildScpCommand(options);
+    const command = buildRsyncCommand(options);
 
     // Verify command structure
-    expect(command).toMatch(/^scp -F .+ -r backup:.+ .+$/);
+    expect(command).toMatch(/^rsync -e "ssh -F .+" -avz backup:.+ .+$/);
     expect(command).toContain("/backup/data.tar.gz");
     expect(command).toContain(testLocalDir);
   });

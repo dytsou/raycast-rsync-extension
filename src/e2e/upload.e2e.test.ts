@@ -4,7 +4,7 @@ import {
   validateRemotePath,
   validateHostConfig,
 } from "../utils/validation";
-import { buildScpCommand } from "../utils/scp";
+import { buildRsyncCommand } from "../utils/rsync";
 import {
   TransferDirection,
   TransferOptions,
@@ -20,7 +20,7 @@ describe("Upload E2E Flow", () => {
 
   beforeAll(() => {
     // Create test directory
-    testDir = path.join(os.tmpdir(), "scp-e2e-test-" + Date.now());
+    testDir = path.join(os.tmpdir(), "rsync-e2e-test-" + Date.now());
     fs.mkdirSync(testDir, { recursive: true });
 
     // Create test local file
@@ -64,7 +64,7 @@ describe("Upload E2E Flow", () => {
     expect(hostValidation.valid).toBe(true);
     expect(hostValidation.error).toBeUndefined();
 
-    // Step 5: Build SCP command
+    // Step 5: Build rsync command
     const options: TransferOptions = {
       hostConfig: testHost,
       localPath: testLocalFile,
@@ -72,9 +72,9 @@ describe("Upload E2E Flow", () => {
       direction: TransferDirection.UPLOAD,
     };
 
-    const command = buildScpCommand(options);
-    expect(command).toContain("scp");
-    expect(command).toContain("-r");
+    const command = buildRsyncCommand(options);
+    expect(command).toContain("rsync");
+    expect(command).toContain("-a");
     expect(command).toContain("testserver:");
     expect(command).toContain(testLocalFile);
     expect(command).toContain(remotePath);
@@ -175,12 +175,12 @@ describe("Upload E2E Flow", () => {
       direction: TransferDirection.UPLOAD,
     };
 
-    const command = buildScpCommand(options);
-    expect(command).toContain("-r");
+    const command = buildRsyncCommand(options);
+    expect(command).toContain("-a");
     expect(command).toContain(testSubDir);
   });
 
-  it("should build correct SCP command for upload", () => {
+  it("should build correct rsync command for upload", () => {
     const testHost: SSHHostConfig = {
       host: "production",
       hostName: "prod.example.com",
@@ -195,10 +195,10 @@ describe("Upload E2E Flow", () => {
       direction: TransferDirection.UPLOAD,
     };
 
-    const command = buildScpCommand(options);
+    const command = buildRsyncCommand(options);
 
     // Verify command structure
-    expect(command).toMatch(/^scp -F .+ -r .+ production:.+$/);
+    expect(command).toMatch(/^rsync -e "ssh -F .+" -avz .+ production:.+$/);
     expect(command).toContain(testLocalFile);
     expect(command).toContain("/var/www/file.txt");
   });

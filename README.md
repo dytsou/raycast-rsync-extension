@@ -1,6 +1,6 @@
-# Raycast SCP Extension
+# Raycast Rsync Extension
 
-A Raycast extension for transferring files between local and remote servers using SCP with SSH config integration.
+A Raycast extension for transferring files between local and remote servers using rsync with SSH config integration.
 
 ## Features
 
@@ -19,14 +19,14 @@ A Raycast extension for transferring files between local and remote servers usin
 ## Usage
 
 ### Upload Files
-1. Open Raycast and search for "Upload Files via SCP"
+1. Open Raycast and search for "Upload Files via Rsync"
 2. Select a host from your SSH config
 3. Choose local files to upload
 4. Enter the remote destination path
 5. Confirm to start the transfer
 
 ### Download Files
-1. Open Raycast and search for "Download Files via SCP"
+1. Open Raycast and search for "Download Files via Rsync"
 2. Select a host from your SSH config
 3. Enter the remote file path
 4. Choose local destination directory
@@ -36,6 +36,7 @@ A Raycast extension for transferring files between local and remote servers usin
 
 - SSH config file at ~/.ssh/config with configured hosts
 - SSH access to remote servers
+- rsync installed (usually pre-installed on macOS and Linux)
 - Raycast installed
 
 ## Development
@@ -67,7 +68,7 @@ npm run test:watch
 
 The project includes comprehensive test coverage using Vitest:
 
-- Unit tests for utilities (SSH config parsing, validation, SCP command building)
+- Unit tests for utilities (SSH config parsing, validation, rsync command building)
 - Component tests for UI components
 - E2E tests for upload and download workflows
 

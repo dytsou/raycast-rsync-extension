@@ -1,10 +1,10 @@
 /**
- * Main entry point for the Raycast SCP Extension
+ * Main entry point for the Raycast Rsync Extension
  *
  * This file serves as the central export point for all commands in the extension.
  * The extension provides two main commands:
- * 1. Upload Files via SCP - Transfer files from local system to remote servers
- * 2. Download Files via SCP - Transfer files from remote servers to local system
+ * 1. Upload Files via Rsync - Transfer files from local system to remote servers
+ * 2. Download Files via Rsync - Transfer files from remote servers to local system
  *
  * Both commands integrate with the user's SSH config file (~/.ssh/config) to
  * provide a seamless experience for selecting and connecting to remote servers.
