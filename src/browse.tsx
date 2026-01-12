@@ -7,6 +7,7 @@ import {
   Toast,
   Icon,
   useNavigation,
+  popToRoot,
 } from "@raycast/api";
 import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
@@ -308,11 +309,27 @@ function RemoteFileList({
                         : `${remotePath}/${file.name}`
                     }
                     shortcut={{ modifiers: ["cmd"], key: "c" }}
+                    onCopy={async () => {
+                      await showToast({
+                        style: Toast.Style.Success,
+                        title: "Path Copied",
+                        message: "Path copied to clipboard",
+                      });
+                      await popToRoot();
+                    }}
                   />
                   <Action.CopyToClipboard
                     title="Copy Name"
                     content={file.name}
                     shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+                    onCopy={async () => {
+                      await showToast({
+                        style: Toast.Style.Success,
+                        title: "Name Copied",
+                        message: "Name copied to clipboard",
+                      });
+                      await popToRoot();
+                    }}
                   />
                 </>
               ) : (
@@ -325,11 +342,27 @@ function RemoteFileList({
                         : `${remotePath}/${file.name}`
                     }
                     shortcut={{ modifiers: ["cmd"], key: "c" }}
+                    onCopy={async () => {
+                      await showToast({
+                        style: Toast.Style.Success,
+                        title: "Path Copied",
+                        message: "Path copied to clipboard",
+                      });
+                      await popToRoot();
+                    }}
                   />
                   <Action.CopyToClipboard
                     title="Copy Name"
                     content={file.name}
                     shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+                    onCopy={async () => {
+                      await showToast({
+                        style: Toast.Style.Success,
+                        title: "Name Copied",
+                        message: "Name copied to clipboard",
+                      });
+                      await popToRoot();
+                    }}
                   />
                 </>
               )}
