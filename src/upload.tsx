@@ -121,7 +121,7 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
       // Check if error is about Finder not being frontmost
       const errorMessage =
         err instanceof Error ? err.message : "Failed to select files";
-      
+
       if (errorMessage.includes("Finder isn't the frontmost application")) {
         // Silently fall back to manual entry - this is expected behavior
         // when user opens the extension directly without selecting files in Finder first
@@ -168,7 +168,7 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
         placeholder="/path/to/local/file"
         value={selectedPath}
         onChange={setSelectedPath}
-        info="Enter the path to the file or directory you want to upload"
+        info="Select files or folders in Finder before opening this extension, or manually enter the path to the file or directory you want to upload"
       />
       <Form.Description
         title="Host Details"

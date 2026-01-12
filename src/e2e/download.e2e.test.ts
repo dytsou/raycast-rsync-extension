@@ -29,7 +29,7 @@ describe("Download E2E Flow", () => {
   it("should complete full download workflow with valid inputs", () => {
     // This test verifies the complete download workflow
     // After successful execution, the UI will call popToRoot() to close the extension
-    
+
     // Step 1: Create mock host config
     const downloadHost: SSHHostConfig = {
       host: "downloadserver",

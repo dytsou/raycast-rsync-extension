@@ -38,7 +38,7 @@ describe("Upload E2E Flow", () => {
   it("should complete full upload workflow with valid inputs", () => {
     // This test verifies the complete upload workflow
     // After successful execution, the UI will call popToRoot() to close the extension
-    
+
     // Step 1: Create mock host config
     const testHost: SSHHostConfig = {
       host: "testserver",
