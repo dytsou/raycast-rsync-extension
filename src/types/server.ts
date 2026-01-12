@@ -19,6 +19,15 @@ export enum TransferDirection {
 }
 
 /**
+ * Rsync-specific options
+ */
+export interface RsyncOptions {
+  humanReadable?: boolean; // -h: human-readable file sizes
+  delete?: boolean; // --delete: delete extraneous files from destination
+  progress?: boolean; // -P: show progress and support partial transfers
+}
+
+/**
  * Options for rsync transfer operation
  */
 export interface TransferOptions {
@@ -26,6 +35,7 @@ export interface TransferOptions {
   localPath: string;
   remotePath: string;
   direction: TransferDirection;
+  rsyncOptions?: RsyncOptions;
 }
 
 /**
@@ -34,6 +44,7 @@ export interface TransferOptions {
 export interface RsyncResult {
   success: boolean;
   message: string;
+  stdout?: string; // rsync output messages
   stderr?: string;
 }
 

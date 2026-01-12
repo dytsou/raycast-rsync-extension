@@ -15,6 +15,7 @@ import {
   SSHHostConfig,
   TransferDirection,
   TransferOptions,
+  RsyncOptions,
 } from "./types/server";
 
 /**
@@ -156,6 +157,9 @@ function LocalPathForm({
 }) {
   const [localPath, setLocalPath] = useState<string>("");
   const [localPathError, setLocalPathError] = useState<string | undefined>();
+  const [humanReadable, setHumanReadable] = useState<boolean>(true);
+  const [showProgress, setShowProgress] = useState<boolean>(true);
+  const [deleteExtraneous, setDeleteExtraneous] = useState<boolean>(false);
 
   async function handleSubmit(values: { localPath: string }) {
     const localPathValue = values.localPath.trim();
@@ -198,15 +202,20 @@ function LocalPathForm({
     }
 
     // Execute transfer
-    await executeTransfer(hostConfig, remotePath, localPathValue);
+    await executeTransfer(hostConfig, remotePath, localPathValue, {
+      humanReadable,
+      progress: showProgress,
+      delete: deleteExtraneous,
+    });
   }
 
   async function executeTransfer(
     hostConfig: SSHHostConfig,
     remotePath: string,
     localPath: string,
+    rsyncOptions: RsyncOptions,
   ) {
-    // Show progress toast
+    // Show initial progress toast
     await showToast({
       style: Toast.Style.Animated,
       title: "Transferring files...",
@@ -225,17 +234,32 @@ function LocalPathForm({
         localPath,
         remotePath,
         direction: TransferDirection.DOWNLOAD,
+        rsyncOptions,
       };
 
-      const result = await executeRsync(options);
+      // Progress callback to update toast in real-time
+      const progressCallback = async (progressMessage: string) => {
+        await showToast({
+          style: Toast.Style.Animated,
+          title: "Transferring files...",
+          message: progressMessage,
+        });
+      };
+
+      const result = await executeRsync(options, progressCallback);
 
       if (result.success) {
         console.log("Download completed successfully");
+        // Show formatted rsync output message (includes file sizes and progress if flags enabled)
         await showToast({
           style: Toast.Style.Success,
           title: "Download Successful",
-          message: "Files transferred successfully",
+          message: result.message,
         });
+        // Log full output for debugging
+        if (result.stdout) {
+          console.log("Rsync output:", result.stdout);
+        }
         // Close the extension after successful download
         await popToRoot();
       } else {
@@ -282,6 +306,32 @@ function LocalPathForm({
       <Form.Description
         title="Host"
         text={`${hostConfig.host}${hostConfig.hostName ? ` (${hostConfig.hostName})` : ""}`}
+      />
+      <Form.Separator />
+      <Form.Description
+        title="Rsync Options"
+        text="Configure additional rsync transfer options"
+      />
+      <Form.Checkbox
+        id="humanReadable"
+        label="Human-readable file sizes (-h)"
+        value={humanReadable}
+        onChange={setHumanReadable}
+        info="Display file sizes in KB, MB, GB format"
+      />
+      <Form.Checkbox
+        id="progress"
+        label="Show progress (-P)"
+        value={showProgress}
+        onChange={setShowProgress}
+        info="Show transfer progress and support partial transfers"
+      />
+      <Form.Checkbox
+        id="delete"
+        label="Delete extraneous files (--delete)"
+        value={deleteExtraneous}
+        onChange={setDeleteExtraneous}
+        info="Delete files in destination that don't exist in source (use with caution)"
       />
     </Form>
   );
