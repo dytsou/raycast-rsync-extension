@@ -8,6 +8,7 @@ import {
   Icon,
   useNavigation,
   popToRoot,
+  Clipboard,
 } from "@raycast/api";
 import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
@@ -301,15 +302,15 @@ function RemoteFileList({
                       />
                     }
                   />
-                  <Action.CopyToClipboard
+                  <Action
                     title="Copy Path"
-                    content={
-                      remotePath.endsWith("/")
-                        ? `${remotePath}${file.name}`
-                        : `${remotePath}/${file.name}`
-                    }
+                    icon={Icon.Clipboard}
                     shortcut={{ modifiers: ["cmd"], key: "c" }}
-                    onCopy={async () => {
+                    onAction={async () => {
+                      const pathToCopy = remotePath.endsWith("/")
+                        ? `${remotePath}${file.name}`
+                        : `${remotePath}/${file.name}`;
+                      await Clipboard.copy(pathToCopy);
                       await showToast({
                         style: Toast.Style.Success,
                         title: "Path Copied",
@@ -318,11 +319,12 @@ function RemoteFileList({
                       await popToRoot();
                     }}
                   />
-                  <Action.CopyToClipboard
+                  <Action
                     title="Copy Name"
-                    content={file.name}
+                    icon={Icon.Clipboard}
                     shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
-                    onCopy={async () => {
+                    onAction={async () => {
+                      await Clipboard.copy(file.name);
                       await showToast({
                         style: Toast.Style.Success,
                         title: "Name Copied",
@@ -334,15 +336,15 @@ function RemoteFileList({
                 </>
               ) : (
                 <>
-                  <Action.CopyToClipboard
+                  <Action
                     title="Copy Path"
-                    content={
-                      remotePath.endsWith("/")
-                        ? `${remotePath}${file.name}`
-                        : `${remotePath}/${file.name}`
-                    }
+                    icon={Icon.Clipboard}
                     shortcut={{ modifiers: ["cmd"], key: "c" }}
-                    onCopy={async () => {
+                    onAction={async () => {
+                      const pathToCopy = remotePath.endsWith("/")
+                        ? `${remotePath}${file.name}`
+                        : `${remotePath}/${file.name}`;
+                      await Clipboard.copy(pathToCopy);
                       await showToast({
                         style: Toast.Style.Success,
                         title: "Path Copied",
@@ -351,11 +353,12 @@ function RemoteFileList({
                       await popToRoot();
                     }}
                   />
-                  <Action.CopyToClipboard
+                  <Action
                     title="Copy Name"
-                    content={file.name}
+                    icon={Icon.Clipboard}
                     shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
-                    onCopy={async () => {
+                    onAction={async () => {
+                      await Clipboard.copy(file.name);
                       await showToast({
                         style: Toast.Style.Success,
                         title: "Name Copied",
