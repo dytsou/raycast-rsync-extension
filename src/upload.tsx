@@ -6,6 +6,7 @@ import {
   showToast,
   Toast,
   getSelectedFinderItems,
+  popToRoot,
 } from "@raycast/api";
 import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
@@ -281,6 +282,8 @@ function RemotePathForm({
           title: "Upload Successful",
           message: "Files transferred successfully",
         });
+        // Close the extension after successful upload
+        await popToRoot();
       } else {
         console.error("Upload failed:", result.message);
         await showToast({

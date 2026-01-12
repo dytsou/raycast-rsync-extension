@@ -5,6 +5,7 @@ import {
   Form,
   showToast,
   Toast,
+  popToRoot,
 } from "@raycast/api";
 import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
@@ -235,6 +236,8 @@ function LocalPathForm({
           title: "Download Successful",
           message: "Files transferred successfully",
         });
+        // Close the extension after successful download
+        await popToRoot();
       } else {
         console.error("Download failed:", result.message);
         await showToast({
