@@ -13,8 +13,8 @@ A Raycast extension for transferring files between local and remote servers usin
 ## Installation
 
 1. Clone this repository
-2. Run `npm install` to install dependencies
-3. Run `npm run dev` to start development mode
+2. Run `pnpm install` to install dependencies
+3. Run `pnpm run dev` to start development mode
 
 ## Usage
 
@@ -42,19 +42,19 @@ A Raycast extension for transferring files between local and remote servers usin
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development mode
-npm run dev
+pnpm run dev
 
 # Build for production
-npm run build
+pnpm run build
 
 # Lint code
-npm run lint
+pnpm run lint
 
 # Fix linting issues
-npm run fix-lint
+pnpm run fix-lint
 ```
 
 ## License
