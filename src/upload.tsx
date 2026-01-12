@@ -114,23 +114,28 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
         setSelectedPath(finderItems[0].path);
         console.log("Selected file from Finder:", finderItems[0].path);
       } else {
-        // Fall back to file picker
-        await showToast({
-          style: Toast.Style.Animated,
-          title: "Opening file picker...",
-        });
-        // Note: open() doesn't return the selected path, so we'll use a form instead
+        // No items selected, fall back to manual entry
         setSelectedPath(""); // Reset and show form
       }
     } catch (err) {
-      console.error("Error selecting files:", err);
+      // Check if error is about Finder not being frontmost
       const errorMessage =
         err instanceof Error ? err.message : "Failed to select files";
-      await showToast({
-        style: Toast.Style.Failure,
-        title: "File Selection Error",
-        message: errorMessage,
-      });
+      
+      if (errorMessage.includes("Finder isn't the frontmost application")) {
+        // Silently fall back to manual entry - this is expected behavior
+        // when user opens the extension directly without selecting files in Finder first
+        console.log("Finder not frontmost, falling back to manual path entry");
+        setSelectedPath(""); // Show form for manual entry
+      } else {
+        // For other errors, log and show notification
+        console.error("Error selecting files:", err);
+        await showToast({
+          style: Toast.Style.Failure,
+          title: "File Selection Error",
+          message: errorMessage,
+        });
+      }
     } finally {
       setIsSelecting(false);
     }
