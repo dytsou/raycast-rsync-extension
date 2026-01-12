@@ -1,23 +1,31 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { validateLocalPath, validateRemotePath, validateHostConfig } from '../utils/validation';
-import { buildScpCommand } from '../utils/scp';
-import { TransferDirection, TransferOptions, SSHHostConfig } from '../types/server';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import {
+  validateLocalPath,
+  validateRemotePath,
+  validateHostConfig,
+} from "../utils/validation";
+import { buildScpCommand } from "../utils/scp";
+import {
+  TransferDirection,
+  TransferOptions,
+  SSHHostConfig,
+} from "../types/server";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 
-describe('Upload E2E Flow', () => {
+describe("Upload E2E Flow", () => {
   let testLocalFile: string;
   let testDir: string;
 
   beforeAll(() => {
     // Create test directory
-    testDir = path.join(os.tmpdir(), 'scp-e2e-test-' + Date.now());
+    testDir = path.join(os.tmpdir(), "scp-e2e-test-" + Date.now());
     fs.mkdirSync(testDir, { recursive: true });
-    
+
     // Create test local file
-    testLocalFile = path.join(testDir, 'test-file.txt');
-    fs.writeFileSync(testLocalFile, 'Test content for upload');
+    testLocalFile = path.join(testDir, "test-file.txt");
+    fs.writeFileSync(testLocalFile, "Test content for upload");
   });
 
   afterAll(() => {
@@ -27,32 +35,32 @@ describe('Upload E2E Flow', () => {
     }
   });
 
-  it('should complete full upload workflow with valid inputs', () => {
+  it("should complete full upload workflow with valid inputs", () => {
     // Step 1: Create mock host config
     const testHost: SSHHostConfig = {
-      host: 'testserver',
-      hostName: 'test.example.com',
-      user: 'testuser',
+      host: "testserver",
+      hostName: "test.example.com",
+      user: "testuser",
       port: 2222,
-      identityFile: '~/.ssh/test_key',
+      identityFile: "~/.ssh/test_key",
     };
-    
+
     // Step 2: Validate local path
     const localValidation = validateLocalPath(testLocalFile);
     expect(localValidation.valid).toBe(true);
     expect(localValidation.error).toBeUndefined();
-    
+
     // Step 3: Validate remote path
-    const remotePath = '/remote/destination/file.txt';
+    const remotePath = "/remote/destination/file.txt";
     const remoteValidation = validateRemotePath(remotePath);
     expect(remoteValidation.valid).toBe(true);
     expect(remoteValidation.error).toBeUndefined();
-    
+
     // Step 4: Validate host config
     const hostValidation = validateHostConfig(testHost);
     expect(hostValidation.valid).toBe(true);
     expect(hostValidation.error).toBeUndefined();
-    
+
     // Step 5: Build SCP command
     const options: TransferOptions = {
       hostConfig: testHost,
@@ -60,146 +68,135 @@ describe('Upload E2E Flow', () => {
       remotePath: remotePath,
       direction: TransferDirection.UPLOAD,
     };
-    
+
     const command = buildScpCommand(options);
-    expect(command).toContain('scp');
-    expect(command).toContain('-r');
-    expect(command).toContain('testserver:');
+    expect(command).toContain("scp");
+    expect(command).toContain("-r");
+    expect(command).toContain("testserver:");
     expect(command).toContain(testLocalFile);
     expect(command).toContain(remotePath);
   });
 
-  it('should handle missing local file error in upload workflow', () => {
-    const testHost: SSHHostConfig = {
-      host: 'testserver',
-      hostName: 'test.example.com',
-      user: 'testuser',
-    };
-    
+  it("should handle missing local file error in upload workflow", () => {
     // Try to validate non-existent local path
-    const nonExistentPath = '/path/that/does/not/exist.txt';
+    const nonExistentPath = "/path/that/does/not/exist.txt";
     const localValidation = validateLocalPath(nonExistentPath);
-    
+
     // Should fail validation
     expect(localValidation.valid).toBe(false);
     expect(localValidation.error).toBeDefined();
-    expect(localValidation.error).toContain('File not found');
+    expect(localValidation.error).toContain("File not found");
   });
 
-  it('should handle invalid remote path in upload workflow', () => {
-    const testHost: SSHHostConfig = {
-      host: 'testserver',
-      hostName: 'test.example.com',
-    };
-    
+  it("should handle invalid remote path in upload workflow", () => {
     // Validate local path (should pass)
     const localValidation = validateLocalPath(testLocalFile);
     expect(localValidation.valid).toBe(true);
-    
+
     // Try to validate invalid remote path (empty)
-    const remoteValidation = validateRemotePath('');
-    
+    const remoteValidation = validateRemotePath("");
+
     // Should fail validation
     expect(remoteValidation.valid).toBe(false);
     expect(remoteValidation.error).toBeDefined();
-    expect(remoteValidation.error).toContain('cannot be empty');
+    expect(remoteValidation.error).toContain("cannot be empty");
   });
 
-  it('should handle invalid port in host config', () => {
+  it("should handle invalid port in host config", () => {
     // Create host with invalid port
     const invalidHost: SSHHostConfig = {
-      host: 'testserver',
-      hostName: 'test.example.com',
+      host: "testserver",
+      hostName: "test.example.com",
       port: 99999,
     };
-    
+
     // Validate host config
     const hostValidation = validateHostConfig(invalidHost);
-    
+
     // Should fail validation
     expect(hostValidation.valid).toBe(false);
     expect(hostValidation.error).toBeDefined();
-    expect(hostValidation.error).toContain('must be between 1 and 65535');
+    expect(hostValidation.error).toContain("must be between 1 and 65535");
   });
 
-  it('should validate all inputs before allowing transfer', () => {
+  it("should validate all inputs before allowing transfer", () => {
     const testHost: SSHHostConfig = {
-      host: 'testserver',
-      hostName: 'test.example.com',
-      user: 'testuser',
+      host: "testserver",
+      hostName: "test.example.com",
+      user: "testuser",
       port: 22,
     };
-    
+
     // All validations should pass
     const localValidation = validateLocalPath(testLocalFile);
-    const remoteValidation = validateRemotePath('/remote/path');
+    const remoteValidation = validateRemotePath("/remote/path");
     const hostValidation = validateHostConfig(testHost);
-    
+
     expect(localValidation.valid).toBe(true);
     expect(remoteValidation.valid).toBe(true);
     expect(hostValidation.valid).toBe(true);
-    
+
     // Should be able to create transfer options
     const options: TransferOptions = {
       hostConfig: testHost,
       localPath: testLocalFile,
-      remotePath: '/remote/path',
+      remotePath: "/remote/path",
       direction: TransferDirection.UPLOAD,
     };
-    
+
     expect(options).toBeDefined();
     expect(options.direction).toBe(TransferDirection.UPLOAD);
   });
 
-  it('should handle directory upload', () => {
+  it("should handle directory upload", () => {
     // Create test directory with files
-    const testSubDir = path.join(testDir, 'test-dir');
+    const testSubDir = path.join(testDir, "test-dir");
     fs.mkdirSync(testSubDir, { recursive: true });
-    fs.writeFileSync(path.join(testSubDir, 'file1.txt'), 'Content 1');
-    fs.writeFileSync(path.join(testSubDir, 'file2.txt'), 'Content 2');
-    
+    fs.writeFileSync(path.join(testSubDir, "file1.txt"), "Content 1");
+    fs.writeFileSync(path.join(testSubDir, "file2.txt"), "Content 2");
+
     // Validate directory path
     const localValidation = validateLocalPath(testSubDir);
     expect(localValidation.valid).toBe(true);
-    
+
     // Create options for directory upload
     const testHost: SSHHostConfig = {
-      host: 'testserver',
-      hostName: 'test.example.com',
+      host: "testserver",
+      hostName: "test.example.com",
     };
-    
+
     const options: TransferOptions = {
       hostConfig: testHost,
       localPath: testSubDir,
-      remotePath: '/remote/dir',
+      remotePath: "/remote/dir",
       direction: TransferDirection.UPLOAD,
     };
-    
+
     const command = buildScpCommand(options);
-    expect(command).toContain('-r');
+    expect(command).toContain("-r");
     expect(command).toContain(testSubDir);
   });
 
-  it('should build correct SCP command for upload', () => {
+  it("should build correct SCP command for upload", () => {
     const testHost: SSHHostConfig = {
-      host: 'production',
-      hostName: 'prod.example.com',
-      user: 'produser',
+      host: "production",
+      hostName: "prod.example.com",
+      user: "produser",
       port: 2222,
     };
-    
+
     const options: TransferOptions = {
       hostConfig: testHost,
       localPath: testLocalFile,
-      remotePath: '/var/www/file.txt',
+      remotePath: "/var/www/file.txt",
       direction: TransferDirection.UPLOAD,
     };
-    
+
     const command = buildScpCommand(options);
-    
+
     // Verify command structure
     expect(command).toMatch(/^scp -F .+ -r .+ production:.+$/);
     expect(command).toContain(testLocalFile);
-    expect(command).toContain('/var/www/file.txt');
+    expect(command).toContain("/var/www/file.txt");
   });
 });

@@ -1,7 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
-import * as path from "node:path";
+
+// Type definitions for mocked fs module
+type MockedFS = typeof fs & {
+  __setMockFileContent: (content: string) => void;
+  __setMockFileExists: (exists: boolean) => void;
+  __setMockPermissionError: (shouldThrow: boolean) => void;
+};
 
 // Mock modules before importing the module under test
 vi.mock("node:os", async () => {
@@ -47,8 +53,8 @@ import { parseSSHConfig, getHostConfig } from "./sshConfig";
 describe("SSH Config Parser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (fs as any).__setMockFileExists(false);
-    (fs as any).__setMockPermissionError(false);
+    (fs as unknown as MockedFS).__setMockFileExists(false);
+    (fs as unknown as MockedFS).__setMockPermissionError(false);
   });
 
   it("should parse valid config with single host", () => {
@@ -58,7 +64,7 @@ Host server1
   User admin
   Port 2222
 `;
-    (fs as any).__setMockFileContent(config);
+    (fs as unknown as MockedFS).__setMockFileContent(config);
 
     const hosts = parseSSHConfig();
     expect(hosts).toHaveLength(1);
@@ -82,7 +88,7 @@ Host server2
   HostName test.com
   User root
 `;
-    (fs as any).__setMockFileContent(config);
+    (fs as unknown as MockedFS).__setMockFileContent(config);
 
     const hosts = parseSSHConfig();
     expect(hosts).toHaveLength(2);
@@ -96,7 +102,7 @@ Host server1 srv1 s1
   HostName example.com
   User admin
 `;
-    (fs as any).__setMockFileContent(config);
+    (fs as unknown as MockedFS).__setMockFileContent(config);
 
     const hosts = parseSSHConfig();
     expect(hosts).toHaveLength(3);
@@ -116,7 +122,7 @@ Host *
 Host server1
   HostName example.com
 `;
-    (fs as any).__setMockFileContent(config);
+    (fs as unknown as MockedFS).__setMockFileContent(config);
 
     const hosts = parseSSHConfig();
     expect(hosts).toHaveLength(1);
@@ -132,7 +138,7 @@ Host server1
   
   User admin
 `;
-    (fs as any).__setMockFileContent(config);
+    (fs as unknown as MockedFS).__setMockFileContent(config);
 
     const hosts = parseSSHConfig();
     expect(hosts).toHaveLength(1);
@@ -141,7 +147,7 @@ Host server1
   });
 
   it("should throw error for missing config file", () => {
-    (fs as any).__setMockFileExists(false);
+    (fs as unknown as MockedFS).__setMockFileExists(false);
     expect(() => parseSSHConfig()).toThrow("SSH config file not found");
   });
 
@@ -154,7 +160,7 @@ Host server1
 Host server2
   HostName test.com
 `;
-    (fs as any).__setMockFileContent(config);
+    (fs as unknown as MockedFS).__setMockFileContent(config);
 
     const host = getHostConfig("server1");
     expect(host).not.toBeNull();
@@ -167,7 +173,7 @@ Host server2
 Host server1
   HostName example.com
 `;
-    (fs as any).__setMockFileContent(config);
+    (fs as unknown as MockedFS).__setMockFileContent(config);
 
     const host = getHostConfig("nonexistent");
     expect(host).toBeNull();

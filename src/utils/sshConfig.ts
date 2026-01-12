@@ -18,10 +18,10 @@ export function getSSHConfigPath(): string {
  */
 export function parseSSHConfig(): SSHHostConfig[] {
   const configPath = getSSHConfigPath();
-  
+
   // Check if file exists
   if (!fs.existsSync(configPath)) {
-    console.error('SSH config file not found:', configPath);
+    console.error("SSH config file not found:", configPath);
     throw new Error(`SSH config file not found at ${configPath}`);
   }
 
@@ -31,7 +31,7 @@ export function parseSSHConfig(): SSHHostConfig[] {
     content = fs.readFileSync(configPath, "utf-8");
   } catch (error) {
     const nodeError = error as NodeJS.ErrnoException;
-    console.error('Error reading SSH config file:', {
+    console.error("Error reading SSH config file:", {
       code: nodeError.code,
       message: nodeError.message,
       path: configPath,
@@ -48,7 +48,7 @@ export function parseSSHConfig(): SSHHostConfig[] {
 
   const hosts: SSHHostConfig[] = [];
   const lines = content.split("\n");
-  
+
   let currentHosts: string[] = [];
   let currentConfig: Partial<SSHHostConfig> = {};
 
@@ -70,10 +70,12 @@ export function parseSSHConfig(): SSHHostConfig[] {
       }
 
       // Parse new host aliases (space-separated)
-      const aliases = hostMatch[1].split(/\s+/).filter(alias => alias.trim());
-      
+      const aliases = hostMatch[1].split(/\s+/).filter((alias) => alias.trim());
+
       // Filter out wildcard hosts
-      currentHosts = aliases.filter(alias => alias !== "*" && !alias.includes("*"));
+      currentHosts = aliases.filter(
+        (alias) => alias !== "*" && !alias.includes("*"),
+      );
       currentConfig = {};
       continue;
     }
@@ -87,13 +89,15 @@ export function parseSSHConfig(): SSHHostConfig[] {
 
         try {
           switch (lowerKey) {
-            case "hostname":
+            case "hostname": {
               currentConfig.hostName = value.trim();
               break;
-            case "user":
+            }
+            case "user": {
               currentConfig.user = value.trim();
               break;
-            case "port":
+            }
+            case "port": {
               const portNum = parseInt(value.trim(), 10);
               if (!isNaN(portNum)) {
                 currentConfig.port = portNum;
@@ -101,17 +105,23 @@ export function parseSSHConfig(): SSHHostConfig[] {
                 console.warn(`Invalid port value on line ${i + 1}: ${value}`);
               }
               break;
-            case "identityfile":
+            }
+            case "identityfile": {
               // Expand ~ in paths
               let identityPath = value.trim();
               if (identityPath.startsWith("~")) {
-                identityPath = path.join(os.homedir(), identityPath.substring(1));
+                identityPath = path.join(
+                  os.homedir(),
+                  identityPath.substring(1),
+                );
               }
               currentConfig.identityFile = identityPath;
               break;
-            case "proxyjump":
+            }
+            case "proxyjump": {
               currentConfig.proxyJump = value.trim();
               break;
+            }
           }
         } catch (error) {
           // Log malformed entry but continue parsing
@@ -136,7 +146,7 @@ export function parseSSHConfig(): SSHHostConfig[] {
 function saveHostConfigs(
   hosts: SSHHostConfig[],
   aliases: string[],
-  config: Partial<SSHHostConfig>
+  config: Partial<SSHHostConfig>,
 ): void {
   for (const alias of aliases) {
     hosts.push({
@@ -158,10 +168,10 @@ function saveHostConfigs(
 export function getHostConfig(alias: string): SSHHostConfig | null {
   try {
     const hosts = parseSSHConfig();
-    return hosts.find(host => host.host === alias) || null;
+    return hosts.find((host) => host.host === alias) || null;
   } catch (error) {
     // Log error for debugging
-    console.error('Error getting host config:', error);
+    console.error("Error getting host config:", error);
     // Return null if config cannot be parsed
     return null;
   }

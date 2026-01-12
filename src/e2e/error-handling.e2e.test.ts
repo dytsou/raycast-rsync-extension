@@ -1,44 +1,53 @@
-import { describe, it, expect } from 'vitest';
-import { executeScp } from '../utils/scp';
-import { validateLocalPath, validateRemotePath, validateHostConfig, validatePort } from '../utils/validation';
-import { TransferDirection, TransferOptions, SSHHostConfig } from '../types/server';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import { describe, it, expect } from "vitest";
+import { executeScp } from "../utils/scp";
+import {
+  validateLocalPath,
+  validateRemotePath,
+  validateHostConfig,
+  validatePort,
+} from "../utils/validation";
+import {
+  TransferDirection,
+  TransferOptions,
+  SSHHostConfig,
+} from "../types/server";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 
-describe('Error Handling E2E', () => {
-  describe('Validation Errors', () => {
-    it('should handle missing local file', () => {
-      const nonExistentFile = '/path/that/does/not/exist/file.txt';
+describe("Error Handling E2E", () => {
+  describe("Validation Errors", () => {
+    it("should handle missing local file", () => {
+      const nonExistentFile = "/path/that/does/not/exist/file.txt";
       const validation = validateLocalPath(nonExistentFile);
-      
+
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('File not found');
+      expect(validation.error).toContain("File not found");
     });
 
-    it('should handle empty local path', () => {
-      const validation = validateLocalPath('');
-      
+    it("should handle empty local path", () => {
+      const validation = validateLocalPath("");
+
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('cannot be empty');
+      expect(validation.error).toContain("cannot be empty");
     });
 
-    it('should handle empty remote path', () => {
-      const validation = validateRemotePath('');
-      
+    it("should handle empty remote path", () => {
+      const validation = validateRemotePath("");
+
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('cannot be empty');
+      expect(validation.error).toContain("cannot be empty");
     });
 
-    it('should handle remote path with control characters', () => {
-      const invalidPath = '/path\x00/file.txt';
+    it("should handle remote path with control characters", () => {
+      const invalidPath = "/path\x00/file.txt";
       const validation = validateRemotePath(invalidPath);
-      
+
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('control characters');
+      expect(validation.error).toContain("control characters");
     });
 
-    it('should handle invalid port numbers', () => {
+    it("should handle invalid port numbers", () => {
       const testCases = [
         { port: 0, shouldFail: true },
         { port: -1, shouldFail: true },
@@ -48,64 +57,64 @@ describe('Error Handling E2E', () => {
         { port: 22, shouldFail: false },
         { port: 65535, shouldFail: false },
       ];
-      
+
       testCases.forEach(({ port, shouldFail }) => {
         const validation = validatePort(port);
         if (shouldFail) {
           expect(validation.valid).toBe(false);
-          expect(validation.error).toContain('must be between 1 and 65535');
+          expect(validation.error).toContain("must be between 1 and 65535");
         } else {
           expect(validation.valid).toBe(true);
         }
       });
     });
 
-    it('should handle missing host alias', () => {
+    it("should handle missing host alias", () => {
       const invalidHost: SSHHostConfig = {
-        host: '',
-        hostName: 'example.com',
+        host: "",
+        hostName: "example.com",
       };
-      
+
       const validation = validateHostConfig(invalidHost);
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('Host alias is required');
+      expect(validation.error).toContain("Host alias is required");
     });
 
-    it('should handle host with invalid port', () => {
+    it("should handle host with invalid port", () => {
       const invalidHost: SSHHostConfig = {
-        host: 'testhost',
-        hostName: 'example.com',
+        host: "testhost",
+        hostName: "example.com",
         port: 70000,
       };
-      
+
       const validation = validateHostConfig(invalidHost);
       expect(validation.valid).toBe(false);
-      expect(validation.error).toContain('must be between 1 and 65535');
+      expect(validation.error).toContain("must be between 1 and 65535");
     });
   });
 
-  describe('SCP Execution Errors', () => {
-    it('should handle connection to unreachable host', async () => {
+  describe("SCP Execution Errors", () => {
+    it("should handle connection to unreachable host", async () => {
       const mockHost: SSHHostConfig = {
-        host: 'unreachable-host',
-        hostName: '192.0.2.1', // TEST-NET-1 (non-routable)
-        user: 'testuser',
+        host: "unreachable-host",
+        hostName: "192.0.2.1", // TEST-NET-1 (non-routable)
+        user: "testuser",
       };
 
-      const testDir = path.join(os.tmpdir(), 'scp-test-' + Date.now());
+      const testDir = path.join(os.tmpdir(), "scp-test-" + Date.now());
       fs.mkdirSync(testDir, { recursive: true });
-      const testFile = path.join(testDir, 'test.txt');
-      fs.writeFileSync(testFile, 'test content');
+      const testFile = path.join(testDir, "test.txt");
+      fs.writeFileSync(testFile, "test content");
 
       const options: TransferOptions = {
         hostConfig: mockHost,
         localPath: testFile,
-        remotePath: '/remote/test.txt',
+        remotePath: "/remote/test.txt",
         direction: TransferDirection.UPLOAD,
       };
 
       const result = await executeScp(options);
-      
+
       expect(result.success).toBe(false);
       expect(result.message).toBeDefined();
       expect(result.message.length).toBeGreaterThan(0);
@@ -114,27 +123,27 @@ describe('Error Handling E2E', () => {
       fs.rmSync(testDir, { recursive: true, force: true });
     });
 
-    it('should handle invalid hostname', async () => {
+    it("should handle invalid hostname", async () => {
       const mockHost: SSHHostConfig = {
-        host: 'invalid-host',
-        hostName: 'this-host-does-not-exist-12345.invalid',
-        user: 'testuser',
+        host: "invalid-host",
+        hostName: "this-host-does-not-exist-12345.invalid",
+        user: "testuser",
       };
 
-      const testDir = path.join(os.tmpdir(), 'scp-test-' + Date.now());
+      const testDir = path.join(os.tmpdir(), "scp-test-" + Date.now());
       fs.mkdirSync(testDir, { recursive: true });
-      const testFile = path.join(testDir, 'test.txt');
-      fs.writeFileSync(testFile, 'test content');
+      const testFile = path.join(testDir, "test.txt");
+      fs.writeFileSync(testFile, "test content");
 
       const options: TransferOptions = {
         hostConfig: mockHost,
         localPath: testFile,
-        remotePath: '/remote/test.txt',
+        remotePath: "/remote/test.txt",
         direction: TransferDirection.UPLOAD,
       };
 
       const result = await executeScp(options);
-      
+
       expect(result.success).toBe(false);
       expect(result.message).toBeDefined();
 
@@ -142,38 +151,39 @@ describe('Error Handling E2E', () => {
       fs.rmSync(testDir, { recursive: true, force: true });
     });
 
-    it('should handle missing local file in SCP execution', async () => {
+    it("should handle missing local file in SCP execution", async () => {
       const mockHost: SSHHostConfig = {
-        host: 'test',
-        hostName: 'test.example.com',
+        host: "test",
+        hostName: "test.example.com",
       };
 
-      const nonExistentFile = '/tmp/file-that-does-not-exist-' + Date.now() + '.txt';
+      const nonExistentFile =
+        "/tmp/file-that-does-not-exist-" + Date.now() + ".txt";
 
       const options: TransferOptions = {
         hostConfig: mockHost,
         localPath: nonExistentFile,
-        remotePath: '/remote/test.txt',
+        remotePath: "/remote/test.txt",
         direction: TransferDirection.UPLOAD,
       };
 
       const result = await executeScp(options);
-      
+
       expect(result.success).toBe(false);
       expect(result.message).toBeDefined();
     });
   });
 
-  describe('Complete Error Workflow', () => {
-    it('should validate inputs before attempting transfer', () => {
+  describe("Complete Error Workflow", () => {
+    it("should validate inputs before attempting transfer", () => {
       const mockHost: SSHHostConfig = {
-        host: 'testhost',
-        hostName: 'test.example.com',
+        host: "testhost",
+        hostName: "test.example.com",
         port: 99999, // Invalid port
       };
 
-      const nonExistentFile = '/path/does/not/exist.txt';
-      const emptyRemotePath = '';
+      const nonExistentFile = "/path/does/not/exist.txt";
+      const emptyRemotePath = "";
 
       // All validations should fail
       const localValidation = validateLocalPath(nonExistentFile);
@@ -190,20 +200,20 @@ describe('Error Handling E2E', () => {
       expect(hostValidation.error).toBeDefined();
     });
 
-    it('should pass all validations with correct inputs', () => {
-      const testDir = path.join(os.tmpdir(), 'scp-test-' + Date.now());
+    it("should pass all validations with correct inputs", () => {
+      const testDir = path.join(os.tmpdir(), "scp-test-" + Date.now());
       fs.mkdirSync(testDir, { recursive: true });
-      const testFile = path.join(testDir, 'test.txt');
-      fs.writeFileSync(testFile, 'test content');
+      const testFile = path.join(testDir, "test.txt");
+      fs.writeFileSync(testFile, "test content");
 
       const mockHost: SSHHostConfig = {
-        host: 'validhost',
-        hostName: 'valid.example.com',
-        user: 'validuser',
+        host: "validhost",
+        hostName: "valid.example.com",
+        user: "validuser",
         port: 22,
       };
 
-      const remotePath = '/remote/valid/path.txt';
+      const remotePath = "/remote/valid/path.txt";
 
       // All validations should pass
       const localValidation = validateLocalPath(testFile);
@@ -219,24 +229,24 @@ describe('Error Handling E2E', () => {
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle paths with special characters', () => {
+  describe("Edge Cases", () => {
+    it("should handle paths with special characters", () => {
       const specialPaths = [
-        '/path/with spaces/file.txt',
-        '/path/with-dashes/file.txt',
-        '/path/with_underscores/file.txt',
-        '/path/with.dots/file.txt',
-        '/path/with(parentheses)/file.txt',
-        '/path/with[brackets]/file.txt',
+        "/path/with spaces/file.txt",
+        "/path/with-dashes/file.txt",
+        "/path/with_underscores/file.txt",
+        "/path/with.dots/file.txt",
+        "/path/with(parentheses)/file.txt",
+        "/path/with[brackets]/file.txt",
       ];
 
-      specialPaths.forEach(remotePath => {
+      specialPaths.forEach((remotePath) => {
         const validation = validateRemotePath(remotePath);
         expect(validation.valid).toBe(true);
       });
     });
 
-    it('should handle various port edge cases', () => {
+    it("should handle various port edge cases", () => {
       const portTests = [
         { port: 1, valid: true },
         { port: 22, valid: true },
@@ -256,23 +266,23 @@ describe('Error Handling E2E', () => {
       });
     });
 
-    it('should handle host config with minimal properties', () => {
+    it("should handle host config with minimal properties", () => {
       const minimalHost: SSHHostConfig = {
-        host: 'minimal',
+        host: "minimal",
       };
 
       const validation = validateHostConfig(minimalHost);
       expect(validation.valid).toBe(true);
     });
 
-    it('should handle host config with all properties', () => {
+    it("should handle host config with all properties", () => {
       const fullHost: SSHHostConfig = {
-        host: 'fullhost',
-        hostName: 'full.example.com',
-        user: 'fulluser',
+        host: "fullhost",
+        hostName: "full.example.com",
+        user: "fulluser",
         port: 2222,
-        identityFile: '~/.ssh/id_rsa',
-        proxyJump: 'jumphost',
+        identityFile: "~/.ssh/id_rsa",
+        proxyJump: "jumphost",
       };
 
       const validation = validateHostConfig(fullHost);

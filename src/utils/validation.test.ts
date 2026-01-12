@@ -1,7 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as fs from "node:fs";
-import { validateLocalPath, validateRemotePath, validatePort, validateHostConfig } from "./validation";
+import {
+  validateLocalPath,
+  validateRemotePath,
+  validatePort,
+  validateHostConfig,
+} from "./validation";
 import { SSHHostConfig } from "../types/server";
+
+// Type definitions for mocked fs module
+type MockedFS = typeof fs & {
+  __setMockFileExists: (exists: boolean) => void;
+};
 
 // Mock fs module
 vi.mock("node:fs", async () => {
@@ -20,19 +30,19 @@ vi.mock("node:fs", async () => {
 describe("Validation Utilities", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (fs as any).__setMockFileExists(false);
+    (fs as unknown as MockedFS).__setMockFileExists(false);
   });
 
   describe("validateLocalPath", () => {
     it("should return valid for existing file", () => {
-      (fs as any).__setMockFileExists(true);
+      (fs as unknown as MockedFS).__setMockFileExists(true);
       const result = validateLocalPath("/path/to/file.txt");
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });
 
     it("should return invalid for non-existent file", () => {
-      (fs as any).__setMockFileExists(false);
+      (fs as unknown as MockedFS).__setMockFileExists(false);
       const result = validateLocalPath("/path/to/nonexistent.txt");
       expect(result.valid).toBe(false);
       expect(result.error).toBe("File not found");
@@ -97,19 +107,25 @@ describe("Validation Utilities", () => {
     it("should return invalid for port 0", () => {
       const result = validatePort(0);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Invalid port number: must be between 1 and 65535");
+      expect(result.error).toBe(
+        "Invalid port number: must be between 1 and 65535",
+      );
     });
 
     it("should return invalid for port above 65535", () => {
       const result = validatePort(65536);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Invalid port number: must be between 1 and 65535");
+      expect(result.error).toBe(
+        "Invalid port number: must be between 1 and 65535",
+      );
     });
 
     it("should return invalid for negative port", () => {
       const result = validatePort(-1);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Invalid port number: must be between 1 and 65535");
+      expect(result.error).toBe(
+        "Invalid port number: must be between 1 and 65535",
+      );
     });
 
     it("should return invalid for non-integer port", () => {
@@ -157,11 +173,13 @@ describe("Validation Utilities", () => {
       };
       const result = validateHostConfig(config);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Invalid port number: must be between 1 and 65535");
+      expect(result.error).toBe(
+        "Invalid port number: must be between 1 and 65535",
+      );
     });
 
     it("should return invalid for null config", () => {
-      const result = validateHostConfig(null as any);
+      const result = validateHostConfig(null as unknown as SSHHostConfig);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Host configuration is required");
     });

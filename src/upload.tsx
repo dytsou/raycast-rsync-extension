@@ -10,8 +10,16 @@ import {
 import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
 import { executeScp } from "./utils/scp";
-import { validateLocalPath, validateRemotePath, validateHostConfig } from "./utils/validation";
-import { SSHHostConfig, TransferDirection, TransferOptions } from "./types/server";
+import {
+  validateLocalPath,
+  validateRemotePath,
+  validateHostConfig,
+} from "./utils/validation";
+import {
+  SSHHostConfig,
+  TransferDirection,
+  TransferOptions,
+} from "./types/server";
 
 /**
  * Main upload command component
@@ -29,18 +37,19 @@ export default function Command() {
   async function loadHosts() {
     try {
       const parsedHosts = parseSSHConfig();
-      
+
       if (parsedHosts.length === 0) {
         const errorMsg = "No host entries found in SSH config file";
         setError(errorMsg);
-        console.warn('SSH config parsed but no hosts found');
+        console.warn("SSH config parsed but no hosts found");
       } else {
         setHosts(parsedHosts);
         console.log(`Loaded ${parsedHosts.length} SSH host(s)`);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to parse SSH config";
-      console.error('Error loading SSH hosts:', err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to parse SSH config";
+      console.error("Error loading SSH hosts:", err);
       setError(errorMessage);
       await showToast({
         style: Toast.Style.Failure,
@@ -55,10 +64,7 @@ export default function Command() {
   if (error) {
     return (
       <List>
-        <List.EmptyView
-          title="Error Loading SSH Config"
-          description={error}
-        />
+        <List.EmptyView title="Error Loading SSH Config" description={error} />
       </List>
     );
   }
@@ -101,11 +107,11 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
     try {
       // Try to get selected Finder items first
       const finderItems = await getSelectedFinderItems();
-      
+
       if (finderItems.length > 0) {
         // Use the first selected item
         setSelectedPath(finderItems[0].path);
-        console.log('Selected file from Finder:', finderItems[0].path);
+        console.log("Selected file from Finder:", finderItems[0].path);
       } else {
         // Fall back to file picker
         await showToast({
@@ -116,8 +122,9 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
         setSelectedPath(""); // Reset and show form
       }
     } catch (err) {
-      console.error('Error selecting files:', err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to select files";
+      console.error("Error selecting files:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to select files";
       await showToast({
         style: Toast.Style.Failure,
         title: "File Selection Error",
@@ -139,7 +146,12 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
         <ActionPanel>
           <Action.Push
             title="Continue"
-            target={<RemotePathForm hostConfig={hostConfig} localPath={selectedPath} />}
+            target={
+              <RemotePathForm
+                hostConfig={hostConfig}
+                localPath={selectedPath}
+              />
+            }
           />
         </ActionPanel>
       }
@@ -163,7 +175,10 @@ function FileSelectionView({ hostConfig }: { hostConfig: SSHHostConfig }) {
         <Form.Description title="Port" text={hostConfig.port.toString()} />
       )}
       {hostConfig.identityFile && (
-        <Form.Description title="Identity File" text={hostConfig.identityFile} />
+        <Form.Description
+          title="Identity File"
+          text={hostConfig.identityFile}
+        />
       )}
     </Form>
   );
@@ -189,11 +204,13 @@ function RemotePathForm({
     // Validate local path
     const localValidation = validateLocalPath(localPath);
     if (!localValidation.valid) {
-      console.error('Local path validation failed:', localValidation.error);
+      console.error("Local path validation failed:", localValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Local Path",
-        message: localValidation.error || "The specified local file or directory does not exist",
+        message:
+          localValidation.error ||
+          "The specified local file or directory does not exist",
       });
       return;
     }
@@ -201,7 +218,7 @@ function RemotePathForm({
     // Validate remote path
     const remoteValidation = validateRemotePath(remotePathValue);
     if (!remoteValidation.valid) {
-      console.error('Remote path validation failed:', remoteValidation.error);
+      console.error("Remote path validation failed:", remoteValidation.error);
       setRemotePathError(remoteValidation.error);
       await showToast({
         style: Toast.Style.Failure,
@@ -214,11 +231,13 @@ function RemotePathForm({
     // Validate host config
     const hostValidation = validateHostConfig(hostConfig);
     if (!hostValidation.valid) {
-      console.error('Host config validation failed:', hostValidation.error);
+      console.error("Host config validation failed:", hostValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Host Configuration",
-        message: hostValidation.error || "The host configuration is incomplete or invalid",
+        message:
+          hostValidation.error ||
+          "The host configuration is incomplete or invalid",
       });
       return;
     }
@@ -230,7 +249,7 @@ function RemotePathForm({
   async function executeTransfer(
     hostConfig: SSHHostConfig,
     localPath: string,
-    remotePath: string
+    remotePath: string,
   ) {
     // Show progress toast
     await showToast({
@@ -239,7 +258,7 @@ function RemotePathForm({
       message: `Uploading to ${hostConfig.host}`,
     });
 
-    console.log('Starting upload:', {
+    console.log("Starting upload:", {
       host: hostConfig.host,
       localPath,
       remotePath,
@@ -256,14 +275,14 @@ function RemotePathForm({
       const result = await executeScp(options);
 
       if (result.success) {
-        console.log('Upload completed successfully');
+        console.log("Upload completed successfully");
         await showToast({
           style: Toast.Style.Success,
           title: "Upload Successful",
           message: "Files transferred successfully",
         });
       } else {
-        console.error('Upload failed:', result.message);
+        console.error("Upload failed:", result.message);
         await showToast({
           style: Toast.Style.Failure,
           title: "Upload Failed",
@@ -271,8 +290,9 @@ function RemotePathForm({
         });
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      console.error('Upload error:', err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Upload error:", err);
       await showToast({
         style: Toast.Style.Failure,
         title: "Upload Failed",
@@ -301,10 +321,7 @@ function RemotePathForm({
         error={remotePathError}
         info="Enter the destination path on the remote server"
       />
-      <Form.Description
-        title="Local Path"
-        text={localPath}
-      />
+      <Form.Description title="Local Path" text={localPath} />
       <Form.Description
         title="Host"
         text={`${hostConfig.host}${hostConfig.hostName ? ` (${hostConfig.hostName})` : ""}`}

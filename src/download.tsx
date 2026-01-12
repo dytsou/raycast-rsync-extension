@@ -10,7 +10,11 @@ import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
 import { executeScp } from "./utils/scp";
 import { validateRemotePath, validateHostConfig } from "./utils/validation";
-import { SSHHostConfig, TransferDirection, TransferOptions } from "./types/server";
+import {
+  SSHHostConfig,
+  TransferDirection,
+  TransferOptions,
+} from "./types/server";
 
 /**
  * Main download command component
@@ -28,18 +32,19 @@ export default function Command() {
   async function loadHosts() {
     try {
       const parsedHosts = parseSSHConfig();
-      
+
       if (parsedHosts.length === 0) {
         const errorMsg = "No host entries found in SSH config file";
         setError(errorMsg);
-        console.warn('SSH config parsed but no hosts found');
+        console.warn("SSH config parsed but no hosts found");
       } else {
         setHosts(parsedHosts);
         console.log(`Loaded ${parsedHosts.length} SSH host(s)`);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to parse SSH config";
-      console.error('Error loading SSH hosts:', err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to parse SSH config";
+      console.error("Error loading SSH hosts:", err);
       setError(errorMessage);
       await showToast({
         style: Toast.Style.Failure,
@@ -54,10 +59,7 @@ export default function Command() {
   if (error) {
     return (
       <List>
-        <List.EmptyView
-          title="Error Loading SSH Config"
-          description={error}
-        />
+        <List.EmptyView title="Error Loading SSH Config" description={error} />
       </List>
     );
   }
@@ -101,7 +103,9 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
         <ActionPanel>
           <Action.Push
             title="Continue"
-            target={<LocalPathForm hostConfig={hostConfig} remotePath={remotePath} />}
+            target={
+              <LocalPathForm hostConfig={hostConfig} remotePath={remotePath} />
+            }
           />
         </ActionPanel>
       }
@@ -129,7 +133,10 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
         <Form.Description title="Port" text={hostConfig.port.toString()} />
       )}
       {hostConfig.identityFile && (
-        <Form.Description title="Identity File" text={hostConfig.identityFile} />
+        <Form.Description
+          title="Identity File"
+          text={hostConfig.identityFile}
+        />
       )}
     </Form>
   );
@@ -153,7 +160,7 @@ function LocalPathForm({
     const localPathValue = values.localPath.trim();
 
     if (!localPathValue) {
-      console.error('Local path is empty');
+      console.error("Local path is empty");
       setLocalPathError("Local path is required");
       await showToast({
         style: Toast.Style.Failure,
@@ -166,7 +173,7 @@ function LocalPathForm({
     // Validate remote path
     const remoteValidation = validateRemotePath(remotePath);
     if (!remoteValidation.valid) {
-      console.error('Remote path validation failed:', remoteValidation.error);
+      console.error("Remote path validation failed:", remoteValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Remote Path",
@@ -178,11 +185,13 @@ function LocalPathForm({
     // Validate host config
     const hostValidation = validateHostConfig(hostConfig);
     if (!hostValidation.valid) {
-      console.error('Host config validation failed:', hostValidation.error);
+      console.error("Host config validation failed:", hostValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Host Configuration",
-        message: hostValidation.error || "The host configuration is incomplete or invalid",
+        message:
+          hostValidation.error ||
+          "The host configuration is incomplete or invalid",
       });
       return;
     }
@@ -194,7 +203,7 @@ function LocalPathForm({
   async function executeTransfer(
     hostConfig: SSHHostConfig,
     remotePath: string,
-    localPath: string
+    localPath: string,
   ) {
     // Show progress toast
     await showToast({
@@ -203,7 +212,7 @@ function LocalPathForm({
       message: `Downloading from ${hostConfig.host}`,
     });
 
-    console.log('Starting download:', {
+    console.log("Starting download:", {
       host: hostConfig.host,
       remotePath,
       localPath,
@@ -220,14 +229,14 @@ function LocalPathForm({
       const result = await executeScp(options);
 
       if (result.success) {
-        console.log('Download completed successfully');
+        console.log("Download completed successfully");
         await showToast({
           style: Toast.Style.Success,
           title: "Download Successful",
           message: "Files transferred successfully",
         });
       } else {
-        console.error('Download failed:', result.message);
+        console.error("Download failed:", result.message);
         await showToast({
           style: Toast.Style.Failure,
           title: "Download Failed",
@@ -235,8 +244,9 @@ function LocalPathForm({
         });
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      console.error('Download error:', err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Download error:", err);
       await showToast({
         style: Toast.Style.Failure,
         title: "Download Failed",
@@ -265,10 +275,7 @@ function LocalPathForm({
         error={localPathError}
         info="Enter the destination directory on your local system"
       />
-      <Form.Description
-        title="Remote Path"
-        text={remotePath}
-      />
+      <Form.Description title="Remote Path" text={remotePath} />
       <Form.Description
         title="Host"
         text={`${hostConfig.host}${hostConfig.hostName ? ` (${hostConfig.hostName})` : ""}`}
