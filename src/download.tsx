@@ -30,16 +30,20 @@ export default function Command() {
       const parsedHosts = parseSSHConfig();
       
       if (parsedHosts.length === 0) {
-        setError("No host entries found in SSH config file");
+        const errorMsg = "No host entries found in SSH config file";
+        setError(errorMsg);
+        console.warn('SSH config parsed but no hosts found');
       } else {
         setHosts(parsedHosts);
+        console.log(`Loaded ${parsedHosts.length} SSH host(s)`);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to parse SSH config";
+      console.error('Error loading SSH hosts:', err);
       setError(errorMessage);
       await showToast({
         style: Toast.Style.Failure,
-        title: "Error",
+        title: "Error Loading SSH Config",
         message: errorMessage,
       });
     } finally {
@@ -149,11 +153,12 @@ function LocalPathForm({
     const localPathValue = values.localPath.trim();
 
     if (!localPathValue) {
+      console.error('Local path is empty');
       setLocalPathError("Local path is required");
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Local Path",
-        message: "Local path is required",
+        message: "Please enter a destination path for the downloaded files",
       });
       return;
     }
@@ -161,10 +166,11 @@ function LocalPathForm({
     // Validate remote path
     const remoteValidation = validateRemotePath(remotePath);
     if (!remoteValidation.valid) {
+      console.error('Remote path validation failed:', remoteValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Remote Path",
-        message: remoteValidation.error,
+        message: remoteValidation.error || "The remote path format is invalid",
       });
       return;
     }
@@ -172,10 +178,11 @@ function LocalPathForm({
     // Validate host config
     const hostValidation = validateHostConfig(hostConfig);
     if (!hostValidation.valid) {
+      console.error('Host config validation failed:', hostValidation.error);
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Host Configuration",
-        message: hostValidation.error,
+        message: hostValidation.error || "The host configuration is incomplete or invalid",
       });
       return;
     }
@@ -193,6 +200,13 @@ function LocalPathForm({
     await showToast({
       style: Toast.Style.Animated,
       title: "Transferring files...",
+      message: `Downloading from ${hostConfig.host}`,
+    });
+
+    console.log('Starting download:', {
+      host: hostConfig.host,
+      remotePath,
+      localPath,
     });
 
     try {
@@ -206,22 +220,26 @@ function LocalPathForm({
       const result = await executeScp(options);
 
       if (result.success) {
+        console.log('Download completed successfully');
         await showToast({
           style: Toast.Style.Success,
-          title: "Transfer completed successfully",
+          title: "Download Successful",
+          message: "Files transferred successfully",
         });
       } else {
+        console.error('Download failed:', result.message);
         await showToast({
           style: Toast.Style.Failure,
-          title: "Transfer failed",
+          title: "Download Failed",
           message: result.message,
         });
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error('Download error:', err);
       await showToast({
         style: Toast.Style.Failure,
-        title: "Transfer failed",
+        title: "Download Failed",
         message: errorMessage,
       });
     }
