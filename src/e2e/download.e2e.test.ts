@@ -61,9 +61,11 @@ describe("Download E2E Flow", () => {
     const command = buildRsyncCommand(options);
     expect(command).toContain("rsync");
     expect(command).toContain("-a");
-    expect(command).toContain("downloadserver:");
-    expect(command).toContain(remotePath);
-    expect(command).toContain(testLocalDir);
+    // Host alias is now escaped with single quotes
+    expect(command).toContain("'downloadserver':");
+    // Paths are now escaped with single quotes
+    expect(command).toContain(`'${remotePath}'`);
+    expect(command).toContain(`'${testLocalDir}'`);
   });
 
   it("should handle empty remote path in download workflow", () => {
@@ -181,9 +183,9 @@ describe("Download E2E Flow", () => {
 
     const command = buildRsyncCommand(options);
 
-    // Verify command structure
-    expect(command).toMatch(/^rsync -e "ssh -F .+" -avz backup:.+ .+$/);
-    expect(command).toContain("/backup/data.tar.gz");
-    expect(command).toContain(testLocalDir);
+    // Verify command structure (now uses single quotes for escaping)
+    expect(command).toMatch(/^rsync -e 'ssh -F .+' -avz 'backup':.+ .+$/);
+    expect(command).toContain("'/backup/data.tar.gz'");
+    expect(command).toContain(`'${testLocalDir}'`);
   });
 });

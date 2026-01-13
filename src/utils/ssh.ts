@@ -3,6 +3,7 @@ import { promisify } from "util";
 import { homedir } from "os";
 import { join } from "path";
 import { SSHHostConfig, RemoteFile } from "../types/server";
+import { shellEscape } from "./shellEscape";
 
 const execAsync = promisify(exec);
 
@@ -19,9 +20,20 @@ export async function executeRemoteLs(
   const configPath = join(homedir(), ".ssh", "config");
   const hostAlias = hostConfig.host;
 
+  // Escape all user-provided inputs to prevent command injection
+  const escapedConfigPath = shellEscape(configPath);
+  const escapedHostAlias = shellEscape(hostAlias);
+  const escapedRemotePath = shellEscape(remotePath);
+
   // Use ls -lAh for detailed listing with human-readable sizes
   // -l: long format, -A: all files except . and .., -h: human-readable sizes
-  const command = `ssh -F ${configPath} ${hostAlias} "ls -lAh ${remotePath}"`;
+  // Construct the remote command with properly escaped remotePath
+  // The remote command is: ls -lAh <escaped-remote-path>
+  // We escape the entire remote command for the local shell
+  const remoteCommand = `ls -lAh ${escapedRemotePath}`;
+  const escapedRemoteCommand = shellEscape(remoteCommand);
+
+  const command = `ssh -F ${escapedConfigPath} ${escapedHostAlias} ${escapedRemoteCommand}`;
 
   console.log("Executing remote ls:", command);
 

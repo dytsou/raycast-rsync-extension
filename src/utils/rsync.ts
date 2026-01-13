@@ -9,6 +9,7 @@ import {
   RsyncResult,
   RsyncOptions,
 } from "../types/server";
+import { shellEscape } from "./shellEscape";
 
 const execAsync = promisify(exec);
 
@@ -54,16 +55,27 @@ export function buildRsyncCommand(options: TransferOptions): string {
   // Build rsync flags
   const flags = buildRsyncFlags(rsyncOptions);
 
+  // Escape all user-provided inputs to prevent command injection
+  const escapedLocalPath = shellEscape(localPath);
+  const escapedRemotePath = shellEscape(remotePath);
+  const escapedHostAlias = shellEscape(hostAlias);
+
+  // Escape the SSH command for the -e flag
+  // configPath comes from homedir() so it's safe, but we escape the whole command for consistency
+  const escapedSshCommand = shellEscape(`ssh -F ${configPath}`);
+
   // Base command with SSH config
   // -e: specify SSH command with config file
-  const baseCommand = `rsync -e "ssh -F ${configPath}" ${flags}`;
+  const baseCommand = `rsync -e ${escapedSshCommand} ${flags}`;
 
   if (direction === TransferDirection.UPLOAD) {
     // Upload: rsync -e "ssh -F ~/.ssh/config" [flags] {localPath} {hostAlias}:{remotePath}
-    return `${baseCommand} ${localPath} ${hostAlias}:${remotePath}`;
+    // Escape all user-provided paths to prevent command injection
+    return `${baseCommand} ${escapedLocalPath} ${escapedHostAlias}:${escapedRemotePath}`;
   } else {
     // Download: rsync -e "ssh -F ~/.ssh/config" [flags] {hostAlias}:{remotePath} {localPath}
-    return `${baseCommand} ${hostAlias}:${remotePath} ${localPath}`;
+    // Escape all user-provided paths to prevent command injection
+    return `${baseCommand} ${escapedHostAlias}:${escapedRemotePath} ${escapedLocalPath}`;
   }
 }
 

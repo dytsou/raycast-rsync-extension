@@ -29,9 +29,11 @@ describe("Rsync Command Builder", () => {
 
       const command = buildRsyncCommand(options);
 
-      expect(command).toBe(
-        `rsync -e "ssh -F ${configPath}" -avz /local/path/file.txt testserver:/remote/path/file.txt`,
-      );
+      // Paths should be properly escaped
+      expect(command).toContain("'/local/path/file.txt'");
+      expect(command).toContain("'testserver':");
+      expect(command).toContain("'/remote/path/file.txt'");
+      expect(command).toMatch(/rsync -e '/);
     });
 
     it("should construct download command with correct format", () => {
@@ -44,9 +46,11 @@ describe("Rsync Command Builder", () => {
 
       const command = buildRsyncCommand(options);
 
-      expect(command).toBe(
-        `rsync -e "ssh -F ${configPath}" -avz testserver:/remote/path/file.txt /local/path/destination`,
-      );
+      // Paths should be properly escaped
+      expect(command).toContain("'/local/path/destination'");
+      expect(command).toContain("'testserver':");
+      expect(command).toContain("'/remote/path/file.txt'");
+      expect(command).toMatch(/rsync -e '/);
     });
 
     it("should include archive flag in command", () => {
@@ -72,7 +76,8 @@ describe("Rsync Command Builder", () => {
 
       const command = buildRsyncCommand(options);
 
-      expect(command).toContain(`-e "ssh -F ${configPath}"`);
+      // SSH command should be escaped
+      expect(command).toMatch(/rsync -e '/);
       expect(command).toContain(configPath);
     });
 
@@ -86,7 +91,8 @@ describe("Rsync Command Builder", () => {
 
       const command = buildRsyncCommand(options);
 
-      expect(command).toContain("testserver:");
+      // Host alias should be escaped
+      expect(command).toContain("'testserver':");
     });
 
     it("should handle different host aliases", () => {
@@ -104,7 +110,88 @@ describe("Rsync Command Builder", () => {
 
       const command = buildRsyncCommand(options);
 
-      expect(command).toContain("production-server:");
+      // Host alias should be escaped
+      expect(command).toContain("'production-server':");
+    });
+
+    it("should prevent command injection in localPath", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/tmp/test; rm -rf /",
+        remotePath: "/remote/path",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // The malicious command should be escaped, not executed
+      expect(command).toContain("'/tmp/test; rm -rf /'");
+      // The semicolon should be inside single quotes (escaped), not outside
+      // Check that the path is properly quoted
+      expect(command).toMatch(/'\/(tmp|local)\/test; rm -rf \/'/);
+    });
+
+    it("should prevent command injection in remotePath", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/local/path",
+        remotePath: "/tmp/test | cat /etc/passwd",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // The malicious command should be escaped
+      expect(command).toContain("'/tmp/test | cat /etc/passwd'");
+    });
+
+    it("should prevent command injection in hostAlias", () => {
+      const maliciousHostConfig: SSHHostConfig = {
+        host: "server; rm -rf /",
+        hostName: "example.com",
+      };
+
+      const options: TransferOptions = {
+        hostConfig: maliciousHostConfig,
+        localPath: "/local/path",
+        remotePath: "/remote/path",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // The malicious host alias should be escaped
+      expect(command).toContain("'server; rm -rf /':");
+    });
+
+    it("should handle paths with spaces", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/local/path with spaces/file.txt",
+        remotePath: "/remote/path with spaces/file.txt",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Paths with spaces should be properly escaped
+      expect(command).toContain("'/local/path with spaces/file.txt'");
+      expect(command).toContain("'/remote/path with spaces/file.txt'");
+    });
+
+    it("should handle paths with single quotes", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/local/file'name.txt",
+        remotePath: "/remote/file'name.txt",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Paths with single quotes should be properly escaped
+      expect(command).toContain("'/local/file'\\''name.txt'");
+      expect(command).toContain("'/remote/file'\\''name.txt'");
     });
 
     it("should include human-readable flag when enabled", () => {
@@ -195,7 +282,8 @@ describe("Rsync Command Builder", () => {
       const command = buildRsyncCommand(options);
 
       // Extract the flags part (between -e and paths)
-      const flagsMatch = command.match(/rsync -e "[^"]+" (-[^ ]+)/);
+      // Note: -e argument is now escaped with single quotes
+      const flagsMatch = command.match(/rsync -e '[^']+' (-[^ ]+)/);
       expect(flagsMatch).not.toBeNull();
       const flags = flagsMatch![1];
 
