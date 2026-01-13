@@ -9,7 +9,9 @@ describe("shellEscape", () => {
 
   it("should escape strings with spaces", () => {
     expect(shellEscape("file name.txt")).toBe("'file name.txt'");
-    expect(shellEscape("/path with spaces/file")).toBe("'/path with spaces/file'");
+    expect(shellEscape("/path with spaces/file")).toBe(
+      "'/path with spaces/file'",
+    );
   });
 
   it("should escape strings with single quotes", () => {
@@ -20,28 +22,30 @@ describe("shellEscape", () => {
   it("should escape shell metacharacters to prevent injection", () => {
     // Semicolon - command separator
     expect(shellEscape("file; rm -rf /")).toBe("'file; rm -rf /'");
-    
+
     // Pipe - command chaining
     expect(shellEscape("file | cat")).toBe("'file | cat'");
-    
+
     // Ampersand - background execution
     expect(shellEscape("file & echo done")).toBe("'file & echo done'");
-    
+
     // Dollar sign - variable expansion
     expect(shellEscape("file$HOME")).toBe("'file$HOME'");
-    
+
     // Backtick - command substitution
     expect(shellEscape("file`whoami`")).toBe("'file`whoami`'");
-    
+
     // Parentheses - command grouping
     expect(shellEscape("file(test)")).toBe("'file(test)'");
-    
+
     // Redirection
     expect(shellEscape("file > output")).toBe("'file > output'");
     expect(shellEscape("file < input")).toBe("'file < input'");
-    
+
     // Multiple metacharacters
-    expect(shellEscape("file; rm -rf / | cat &")).toBe("'file; rm -rf / | cat &'");
+    expect(shellEscape("file; rm -rf / | cat &")).toBe(
+      "'file; rm -rf / | cat &'",
+    );
   });
 
   it("should escape empty string", () => {
@@ -71,18 +75,20 @@ describe("shellEscape", () => {
 
 describe("shellEscapeArgs", () => {
   it("should escape and join multiple arguments", () => {
-    expect(shellEscapeArgs(["file1.txt", "file2.txt"])).toBe("'file1.txt' 'file2.txt'");
+    expect(shellEscapeArgs(["file1.txt", "file2.txt"])).toBe(
+      "'file1.txt' 'file2.txt'",
+    );
   });
 
   it("should handle arguments with spaces", () => {
     expect(shellEscapeArgs(["file name.txt", "another file.txt"])).toBe(
-      "'file name.txt' 'another file.txt'"
+      "'file name.txt' 'another file.txt'",
     );
   });
 
   it("should handle arguments with metacharacters", () => {
     expect(shellEscapeArgs(["file; rm", "file|cat"])).toBe(
-      "'file; rm' 'file|cat'"
+      "'file; rm' 'file|cat'",
     );
   });
 

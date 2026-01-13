@@ -7,7 +7,6 @@ import {
   clearCache,
   parseConfigContent,
 } from "../sshConfig";
-import { SSHHostConfig } from "../../types/server";
 
 // Mock os module
 vi.mock("node:os", async () => {
@@ -127,7 +126,11 @@ Host server1 server2 server3
 `;
       const hosts = parseConfigContent(content);
       expect(hosts).toHaveLength(3);
-      expect(hosts.map((h) => h.host)).toEqual(["server1", "server2", "server3"]);
+      expect(hosts.map((h) => h.host)).toEqual([
+        "server1",
+        "server2",
+        "server3",
+      ]);
     });
 
     it("should parse identity file and expand ~", () => {
@@ -271,7 +274,9 @@ Host myserver
 
     it("should handle read errors gracefully", () => {
       // Suppress console.error for this test
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
       clearCache();
 
       mockFileExists = true;

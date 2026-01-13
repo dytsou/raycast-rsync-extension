@@ -8,6 +8,9 @@ import {
 import { homedir } from "os";
 import { join } from "path";
 import { statSync } from "fs";
+import type { PathLike } from "fs";
+import * as os from "os";
+import * as path from "path";
 
 vi.mock("fs", async () => {
   const actual = await vi.importActual<typeof import("fs")>("fs");
@@ -29,7 +32,7 @@ describe("Rsync Command Builder", () => {
 
   beforeEach(() => {
     // Mock statSync to return file stats by default
-    vi.mocked(statSync).mockImplementation((path: string | Buffer) => {
+    vi.mocked(statSync).mockImplementation((path: PathLike) => {
       const pathStr = path.toString();
       // Return directory stats for paths ending with "directory" or containing "/dir"
       if (
@@ -444,8 +447,7 @@ describe("Rsync Command Builder", () => {
       const command = buildRsyncCommand(options);
 
       // Tilde should be expanded to home directory (use homedir() to get actual path)
-      const { homedir } = require("os");
-      const expectedPath = require("path").join(homedir(), "Documents/file.txt");
+      const expectedPath = path.join(os.homedir(), "Documents/file.txt");
       expect(command).toContain(`'${expectedPath}'`);
       // Should not contain literal ~
       expect(command).not.toContain("'~/");
@@ -462,9 +464,7 @@ describe("Rsync Command Builder", () => {
       const command = buildRsyncCommand(options);
 
       // Tilde should be expanded to home directory with trailing slash
-      const { homedir } = require("os");
-      const { join } = require("path");
-      const expectedPath = join(homedir(), "Desktop") + "/";
+      const expectedPath = path.join(os.homedir(), "Desktop") + "/";
       expect(command).toContain(`'${expectedPath}'`);
       // Should not contain literal ~
       expect(command).not.toContain("'~/");
@@ -481,8 +481,7 @@ describe("Rsync Command Builder", () => {
       const command = buildRsyncCommand(options);
 
       // Standalone tilde should be expanded to home directory with trailing slash
-      const { homedir } = require("os");
-      const expectedPath = homedir() + "/";
+      const expectedPath = os.homedir() + "/";
       expect(command).toContain(`'${expectedPath}'`);
       // Should not contain literal ~
       expect(command).not.toContain("'~'");

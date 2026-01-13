@@ -61,7 +61,8 @@ export function validateRemotePath(path: string): ValidationResult {
   if (dangerousMetacharacters.test(path)) {
     return {
       valid: false,
-      error: "Invalid path format: contains dangerous shell metacharacters. Paths are now properly escaped, but this input may be unsafe.",
+      error:
+        "Invalid path format: contains dangerous shell metacharacters. Paths are now properly escaped, but this input may be unsafe.",
     };
   }
 

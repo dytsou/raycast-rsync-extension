@@ -20,6 +20,7 @@ import {
   SSHHostConfig,
   TransferDirection,
   TransferOptions,
+  RsyncOptions,
 } from "./types/server";
 import { getRsyncPreferences } from "./utils/preferences";
 
@@ -205,7 +206,24 @@ function RemotePathForm({
   const [remotePath, setRemotePath] = useState<string>("");
   const [remotePathError, setRemotePathError] = useState<string | undefined>();
 
-  async function handleSubmit(values: { remotePath: string }) {
+  // Initialize rsync options with global preferences
+  const defaultRsyncOptions = getRsyncPreferences();
+  const [humanReadable, setHumanReadable] = useState<boolean>(
+    defaultRsyncOptions.humanReadable ?? false,
+  );
+  const [progress, setProgress] = useState<boolean>(
+    defaultRsyncOptions.progress ?? false,
+  );
+  const [deleteExtra, setDeleteExtra] = useState<boolean>(
+    defaultRsyncOptions.delete ?? false,
+  );
+
+  async function handleSubmit(values: {
+    remotePath: string;
+    humanReadable: boolean;
+    progress: boolean;
+    deleteExtra: boolean;
+  }) {
     const remotePathValue = values.remotePath.trim();
 
     // Validate local path
@@ -249,17 +267,20 @@ function RemotePathForm({
       return;
     }
 
-    // Execute transfer using global preferences
-    await executeTransfer(hostConfig, localPath, remotePathValue);
+    // Execute transfer using form values
+    await executeTransfer(hostConfig, localPath, remotePathValue, {
+      humanReadable: values.humanReadable,
+      progress: values.progress,
+      delete: values.deleteExtra,
+    });
   }
 
   async function executeTransfer(
     hostConfig: SSHHostConfig,
     localPath: string,
     remotePath: string,
+    rsyncOptions: RsyncOptions,
   ) {
-    // Get rsync options from global preferences
-    const rsyncOptions = getRsyncPreferences();
     // Show initial progress toast
     await showToast({
       style: Toast.Style.Animated,
@@ -352,9 +373,31 @@ function RemotePathForm({
         title="Host"
         text={`${hostConfig.host}${hostConfig.hostName ? ` (${hostConfig.hostName})` : ""}`}
       />
+      <Form.Separator />
       <Form.Description
         title="Rsync Options"
-        text="Configure rsync options in Extension Preferences (Cmd + ,)"
+        text="Configure options for this transfer"
+      />
+      <Form.Checkbox
+        id="humanReadable"
+        label="Human-readable file sizes (-h)"
+        value={humanReadable}
+        onChange={setHumanReadable}
+        info="Display file sizes in human-readable format (e.g., 1.5M, 500K)"
+      />
+      <Form.Checkbox
+        id="progress"
+        label="Show progress (-P)"
+        value={progress}
+        onChange={setProgress}
+        info="Display progress information and support partial transfers"
+      />
+      <Form.Checkbox
+        id="deleteExtra"
+        label="Delete extraneous files (--delete)"
+        value={deleteExtra}
+        onChange={setDeleteExtra}
+        info="Delete files in destination that don't exist in source (use with caution)"
       />
     </Form>
   );
