@@ -432,5 +432,60 @@ describe("Rsync Command Builder", () => {
       // Root path should remain as "/" (not modified)
       expect(command).toContain("'/'");
     });
+
+    it("should expand tilde in local paths for upload", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "~/Documents/file.txt",
+        remotePath: "/remote/path",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Tilde should be expanded to home directory (use homedir() to get actual path)
+      const { homedir } = require("os");
+      const expectedPath = require("path").join(homedir(), "Documents/file.txt");
+      expect(command).toContain(`'${expectedPath}'`);
+      // Should not contain literal ~
+      expect(command).not.toContain("'~/");
+    });
+
+    it("should expand tilde in local paths for download", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "~/Desktop",
+        remotePath: "/remote/directory",
+        direction: TransferDirection.DOWNLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Tilde should be expanded to home directory with trailing slash
+      const { homedir } = require("os");
+      const { join } = require("path");
+      const expectedPath = join(homedir(), "Desktop") + "/";
+      expect(command).toContain(`'${expectedPath}'`);
+      // Should not contain literal ~
+      expect(command).not.toContain("'~/");
+    });
+
+    it("should expand standalone tilde to home directory", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "~",
+        remotePath: "/remote/path",
+        direction: TransferDirection.DOWNLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Standalone tilde should be expanded to home directory with trailing slash
+      const { homedir } = require("os");
+      const expectedPath = homedir() + "/";
+      expect(command).toContain(`'${expectedPath}'`);
+      // Should not contain literal ~
+      expect(command).not.toContain("'~'");
+    });
   });
 });

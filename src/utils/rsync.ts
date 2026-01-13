@@ -43,6 +43,21 @@ function buildRsyncFlags(options?: RsyncOptions): string {
 }
 
 /**
+ * Expands tilde (~) to home directory path
+ * @param path - The path that may contain ~
+ * @returns Path with ~ expanded to home directory
+ */
+function expandHomeDir(path: string): string {
+  if (path.startsWith("~/")) {
+    return join(homedir(), path.slice(2));
+  }
+  if (path === "~") {
+    return homedir();
+  }
+  return path;
+}
+
+/**
  * Normalizes a path by removing trailing slash
  * @param path - The path to normalize
  * @returns Path without trailing slash
@@ -74,15 +89,18 @@ function normalizePathsForRsync(options: TransferOptions): {
 } {
   const { localPath, remotePath, direction } = options;
 
+  // Expand ~ in local paths (for both upload and download)
+  const expandedLocalPath = expandHomeDir(localPath);
+
   if (direction === TransferDirection.UPLOAD) {
     // For upload, check if localPath is a directory
     try {
-      const stats = statSync(localPath);
+      const stats = statSync(expandedLocalPath);
       if (stats.isDirectory()) {
         // Source directory: remove trailing slash (if present) to copy directory itself
         // Destination: ensure trailing slash to create source directory inside destination
         return {
-          normalizedLocalPath: removeTrailingSlash(localPath),
+          normalizedLocalPath: removeTrailingSlash(expandedLocalPath),
           normalizedRemotePath: ensureTrailingSlash(remotePath),
         };
       }
@@ -91,9 +109,9 @@ function normalizePathsForRsync(options: TransferOptions): {
       // This could happen if the path doesn't exist yet (shouldn't happen after validation)
       console.warn("Could not stat local path, using original paths:", error);
     }
-    // For files, use paths as-is
+    // For files, use paths as-is (but with ~ expanded)
     return {
-      normalizedLocalPath: localPath,
+      normalizedLocalPath: expandedLocalPath,
       normalizedRemotePath: remotePath,
     };
   } else {
@@ -103,7 +121,7 @@ function normalizePathsForRsync(options: TransferOptions): {
     // Remove trailing slash from remote path (if present) to copy directory itself
     // Add trailing slash to local path to ensure remote directory is created inside
     return {
-      normalizedLocalPath: ensureTrailingSlash(localPath),
+      normalizedLocalPath: ensureTrailingSlash(expandedLocalPath),
       normalizedRemotePath: removeTrailingSlash(remotePath),
     };
   }
