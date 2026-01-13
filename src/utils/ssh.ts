@@ -13,6 +13,30 @@ const execAsync = promisify(exec);
  * @param remotePath - Path to list on remote server
  * @returns Promise resolving to array of RemoteFile objects
  */
+/**
+ * Escapes a remote path for use in SSH commands, handling tilde expansion
+ * For paths starting with ~, we allow the remote shell to expand it by not escaping the ~
+ * @param remotePath - The remote path to escape
+ * @returns Escaped path that allows ~ expansion on remote shell
+ */
+function escapeRemotePath(remotePath: string): string {
+  // If path starts with ~/, allow remote shell to expand ~
+  // We escape only the part after ~/ to prevent injection while allowing ~ expansion
+  if (remotePath.startsWith("~/")) {
+    const pathAfterTilde = remotePath.slice(2); // Everything after "~/"
+    // Escape the path part to prevent injection, but keep ~/ unescaped
+    // This will result in ~/'escaped-path' which allows ~ expansion
+    const escapedPath = shellEscape(pathAfterTilde);
+    return `~/${escapedPath}`;
+  }
+  if (remotePath === "~") {
+    // Standalone ~ doesn't need escaping
+    return "~";
+  }
+  // For all other paths, escape normally
+  return shellEscape(remotePath);
+}
+
 export async function executeRemoteLs(
   hostConfig: SSHHostConfig,
   remotePath: string,
@@ -23,7 +47,8 @@ export async function executeRemoteLs(
   // Escape all user-provided inputs to prevent command injection
   const escapedConfigPath = shellEscape(configPath);
   const escapedHostAlias = shellEscape(hostAlias);
-  const escapedRemotePath = shellEscape(remotePath);
+  // Use special escaping for remote paths to allow ~ expansion
+  const escapedRemotePath = escapeRemotePath(remotePath);
 
   // Use ls -lAh for detailed listing with human-readable sizes
   // -l: long format, -A: all files except . and .., -h: human-readable sizes
