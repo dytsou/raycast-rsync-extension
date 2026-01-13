@@ -15,8 +15,8 @@ import {
   SSHHostConfig,
   TransferDirection,
   TransferOptions,
-  RsyncOptions,
 } from "./types/server";
+import { getRsyncPreferences } from "./utils/preferences";
 
 /**
  * Main download command component
@@ -157,9 +157,6 @@ function LocalPathForm({
 }) {
   const [localPath, setLocalPath] = useState<string>("");
   const [localPathError, setLocalPathError] = useState<string | undefined>();
-  const [humanReadable, setHumanReadable] = useState<boolean>(true);
-  const [showProgress, setShowProgress] = useState<boolean>(true);
-  const [deleteExtraneous, setDeleteExtraneous] = useState<boolean>(false);
 
   async function handleSubmit(values: { localPath: string }) {
     const localPathValue = values.localPath.trim();
@@ -201,20 +198,17 @@ function LocalPathForm({
       return;
     }
 
-    // Execute transfer
-    await executeTransfer(hostConfig, remotePath, localPathValue, {
-      humanReadable,
-      progress: showProgress,
-      delete: deleteExtraneous,
-    });
+    // Execute transfer using global preferences
+    await executeTransfer(hostConfig, remotePath, localPathValue);
   }
 
   async function executeTransfer(
     hostConfig: SSHHostConfig,
     remotePath: string,
     localPath: string,
-    rsyncOptions: RsyncOptions,
   ) {
+    // Get rsync options from global preferences
+    const rsyncOptions = getRsyncPreferences();
     // Show initial progress toast
     await showToast({
       style: Toast.Style.Animated,
@@ -307,31 +301,9 @@ function LocalPathForm({
         title="Host"
         text={`${hostConfig.host}${hostConfig.hostName ? ` (${hostConfig.hostName})` : ""}`}
       />
-      <Form.Separator />
       <Form.Description
         title="Rsync Options"
-        text="Configure additional rsync transfer options"
-      />
-      <Form.Checkbox
-        id="humanReadable"
-        label="Human-readable file sizes (-h)"
-        value={humanReadable}
-        onChange={setHumanReadable}
-        info="Display file sizes in KB, MB, GB format"
-      />
-      <Form.Checkbox
-        id="progress"
-        label="Show progress (-P)"
-        value={showProgress}
-        onChange={setShowProgress}
-        info="Show transfer progress and support partial transfers"
-      />
-      <Form.Checkbox
-        id="delete"
-        label="Delete extraneous files (--delete)"
-        value={deleteExtraneous}
-        onChange={setDeleteExtraneous}
-        info="Delete files in destination that don't exist in source (use with caution)"
+        text="Configure rsync options in Extension Preferences (Cmd + ,)"
       />
     </Form>
   );

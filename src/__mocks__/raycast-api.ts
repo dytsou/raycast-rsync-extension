@@ -37,6 +37,7 @@ export const Action = ({ title, onAction, icon }: any) =>
 
 export const showToast = vi.fn();
 export const getSelectedFinderItems = vi.fn();
+export const getPreferenceValues = vi.fn();
 
 export const Icon = {
   CheckCircle: "check-circle",
