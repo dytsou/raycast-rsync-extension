@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { buildRsyncCommand } from "./rsync";
 import {
   TransferOptions,
@@ -7,6 +7,15 @@ import {
 } from "../types/server";
 import { homedir } from "os";
 import { join } from "path";
+import { statSync } from "fs";
+
+vi.mock("fs", async () => {
+  const actual = await vi.importActual<typeof import("fs")>("fs");
+  return {
+    ...actual,
+    statSync: vi.fn(),
+  };
+});
 
 describe("Rsync Command Builder", () => {
   const mockHostConfig: SSHHostConfig = {
@@ -17,6 +26,34 @@ describe("Rsync Command Builder", () => {
   };
 
   const configPath = join(homedir(), ".ssh", "config");
+
+  beforeEach(() => {
+    // Mock statSync to return file stats by default
+    vi.mocked(statSync).mockImplementation((path: string | Buffer) => {
+      const pathStr = path.toString();
+      // Return directory stats for paths ending with "directory" or containing "/dir"
+      if (
+        pathStr.includes("/directory") ||
+        pathStr.endsWith("directory") ||
+        pathStr.includes("/dir/") ||
+        pathStr === "/local/dir"
+      ) {
+        return {
+          isDirectory: () => true,
+          isFile: () => false,
+        } as ReturnType<typeof statSync>;
+      }
+      // Return file stats for other paths
+      return {
+        isDirectory: () => false,
+        isFile: () => true,
+      } as ReturnType<typeof statSync>;
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   describe("buildRsyncCommand", () => {
     it("should construct upload command with correct format", () => {
@@ -47,7 +84,8 @@ describe("Rsync Command Builder", () => {
       const command = buildRsyncCommand(options);
 
       // Paths should be properly escaped
-      expect(command).toContain("'/local/path/destination'");
+      // For downloads, local destination should have trailing slash to ensure directory is created
+      expect(command).toContain("'/local/path/destination/'");
       expect(command).toContain("'testserver':");
       expect(command).toContain("'/remote/path/file.txt'");
       expect(command).toMatch(/rsync -e '/);
@@ -295,6 +333,104 @@ describe("Rsync Command Builder", () => {
       expect(flags).toContain("a");
       expect(flags).toContain("v");
       expect(flags).toContain("z");
+    });
+
+    it("should normalize directory paths for upload - remove trailing slash from source, add to destination", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/local/directory",
+        remotePath: "/remote/path",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Source directory should not have trailing slash
+      expect(command).toContain("'/local/directory'");
+      expect(command).not.toContain("'/local/directory/'");
+      // Destination should have trailing slash
+      expect(command).toContain("'/remote/path/'");
+    });
+
+    it("should normalize directory paths for upload when source has trailing slash", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/local/directory/",
+        remotePath: "/remote/path",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Source directory should not have trailing slash (removed)
+      expect(command).toContain("'/local/directory'");
+      expect(command).not.toContain("'/local/directory/'");
+      // Destination should have trailing slash
+      expect(command).toContain("'/remote/path/'");
+    });
+
+    it("should not modify file paths for upload", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/local/path/file.txt",
+        remotePath: "/remote/path/file.txt",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // File paths should remain unchanged
+      expect(command).toContain("'/local/path/file.txt'");
+      expect(command).toContain("'/remote/path/file.txt'");
+      expect(command).not.toContain("'/remote/path/file.txt/'");
+    });
+
+    it("should normalize paths for download - add trailing slash to local destination, remove from remote source", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/local/path/destination",
+        remotePath: "/remote/directory",
+        direction: TransferDirection.DOWNLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Local destination should have trailing slash
+      expect(command).toContain("'/local/path/destination/'");
+      // Remote source should not have trailing slash
+      expect(command).toContain("'/remote/directory'");
+      expect(command).not.toContain("'/remote/directory/'");
+    });
+
+    it("should normalize paths for download when remote has trailing slash", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/local/path/destination",
+        remotePath: "/remote/directory/",
+        direction: TransferDirection.DOWNLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Local destination should have trailing slash
+      expect(command).toContain("'/local/path/destination/'");
+      // Remote source should not have trailing slash (removed)
+      expect(command).toContain("'/remote/directory'");
+      expect(command).not.toContain("'/remote/directory/'");
+    });
+
+    it("should handle root path correctly", () => {
+      const options: TransferOptions = {
+        hostConfig: mockHostConfig,
+        localPath: "/",
+        remotePath: "/remote/path",
+        direction: TransferDirection.UPLOAD,
+      };
+
+      const command = buildRsyncCommand(options);
+
+      // Root path should remain as "/" (not modified)
+      expect(command).toContain("'/'");
     });
   });
 });

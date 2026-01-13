@@ -3,6 +3,7 @@ import { spawn } from "child_process";
 import { promisify } from "util";
 import { homedir } from "os";
 import { join } from "path";
+import { statSync } from "fs";
 import {
   TransferOptions,
   TransferDirection,
@@ -42,22 +43,92 @@ function buildRsyncFlags(options?: RsyncOptions): string {
 }
 
 /**
+ * Normalizes a path by removing trailing slash
+ * @param path - The path to normalize
+ * @returns Path without trailing slash
+ */
+function removeTrailingSlash(path: string): string {
+  return path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
+}
+
+/**
+ * Normalizes a destination path by ensuring it ends with a trailing slash
+ * This ensures rsync creates the source directory inside the destination
+ * @param path - The destination path to normalize
+ * @returns Path with trailing slash
+ */
+function ensureTrailingSlash(path: string): string {
+  return path.endsWith("/") ? path : `${path}/`;
+}
+
+/**
+ * Normalizes paths for rsync to ensure directories are copied as directories
+ * For upload: if localPath is a directory, remove trailing slash from source and add to destination
+ * For download: add trailing slash to localPath destination to ensure remote directory is created inside
+ * @param options - Transfer options
+ * @returns Normalized paths
+ */
+function normalizePathsForRsync(options: TransferOptions): {
+  normalizedLocalPath: string;
+  normalizedRemotePath: string;
+} {
+  const { localPath, remotePath, direction } = options;
+
+  if (direction === TransferDirection.UPLOAD) {
+    // For upload, check if localPath is a directory
+    try {
+      const stats = statSync(localPath);
+      if (stats.isDirectory()) {
+        // Source directory: remove trailing slash (if present) to copy directory itself
+        // Destination: ensure trailing slash to create source directory inside destination
+        return {
+          normalizedLocalPath: removeTrailingSlash(localPath),
+          normalizedRemotePath: ensureTrailingSlash(remotePath),
+        };
+      }
+    } catch (error) {
+      // If we can't stat the path, proceed with original paths
+      // This could happen if the path doesn't exist yet (shouldn't happen after validation)
+      console.warn("Could not stat local path, using original paths:", error);
+    }
+    // For files, use paths as-is
+    return {
+      normalizedLocalPath: localPath,
+      normalizedRemotePath: remotePath,
+    };
+  } else {
+    // For download, we can't check if remotePath is a directory without SSH access
+    // But we can ensure the local destination has a trailing slash
+    // This will make rsync create the remote directory inside the local destination
+    // Remove trailing slash from remote path (if present) to copy directory itself
+    // Add trailing slash to local path to ensure remote directory is created inside
+    return {
+      normalizedLocalPath: ensureTrailingSlash(localPath),
+      normalizedRemotePath: removeTrailingSlash(remotePath),
+    };
+  }
+}
+
+/**
  * Builds an rsync command string based on transfer options
  * @param options - Transfer options including direction, paths, and host config
  * @returns The constructed rsync command string
  */
 export function buildRsyncCommand(options: TransferOptions): string {
-  const { hostConfig, localPath, remotePath, direction, rsyncOptions } =
-    options;
+  const { hostConfig, direction, rsyncOptions } = options;
   const configPath = join(homedir(), ".ssh", "config");
   const hostAlias = hostConfig.host;
+
+  // Normalize paths to ensure directories are copied as directories
+  const { normalizedLocalPath, normalizedRemotePath } =
+    normalizePathsForRsync(options);
 
   // Build rsync flags
   const flags = buildRsyncFlags(rsyncOptions);
 
   // Escape all user-provided inputs to prevent command injection
-  const escapedLocalPath = shellEscape(localPath);
-  const escapedRemotePath = shellEscape(remotePath);
+  const escapedLocalPath = shellEscape(normalizedLocalPath);
+  const escapedRemotePath = shellEscape(normalizedRemotePath);
   const escapedHostAlias = shellEscape(hostAlias);
 
   // Escape the SSH command for the -e flag

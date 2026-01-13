@@ -65,7 +65,8 @@ describe("Download E2E Flow", () => {
     expect(command).toContain("'downloadserver':");
     // Paths are now escaped with single quotes
     expect(command).toContain(`'${remotePath}'`);
-    expect(command).toContain(`'${testLocalDir}'`);
+    // For downloads, local destination should have trailing slash to ensure directory is created
+    expect(command).toContain(`'${testLocalDir}/'`);
   });
 
   it("should handle empty remote path in download workflow", () => {
@@ -186,6 +187,7 @@ describe("Download E2E Flow", () => {
     // Verify command structure (now uses single quotes for escaping)
     expect(command).toMatch(/^rsync -e 'ssh -F .+' -avz 'backup':.+ .+$/);
     expect(command).toContain("'/backup/data.tar.gz'");
-    expect(command).toContain(`'${testLocalDir}'`);
+    // For downloads, local destination should have trailing slash to ensure directory is created
+    expect(command).toContain(`'${testLocalDir}/'`);
   });
 });

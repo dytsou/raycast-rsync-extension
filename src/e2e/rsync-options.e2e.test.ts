@@ -213,7 +213,8 @@ describe("Rsync Options E2E", () => {
       );
       expect(command).toContain("'testserver':");
       expect(command).toContain("'/remote/source'");
-      expect(command).toContain("'/local/destination'");
+      // For downloads, local destination should have trailing slash to ensure directory is created
+      expect(command).toContain("'/local/destination/'");
     });
   });
 
