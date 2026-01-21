@@ -85,12 +85,14 @@ jobs:
 
           echo "Publishing $PACKAGE_NAME@$VERSION to GitHub Packages..."
 
+          # Configure npm to use GitHub Packages registry
           npm config set registry https://npm.pkg.github.com
           npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
 
+          # Publish to GitHub Packages (unscoped package goes to repo owner's namespace)
           npm publish
 
-          echo "Successfully published $PACKAGE_NAME@$VERSION"
+          echo "Successfully published $PACKAGE_NAME@$VERSION to GitHub Packages"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -128,20 +130,20 @@ jobs:
             ### Installation
 
             ```bash
-            npm install ${{ steps.package-info.outputs.name }}@latest --registry=https://npm.pkg.github.com
+            npm install ${{ github.repository_owner }}/${{ steps.package-info.outputs.name }} --registry=https://npm.pkg.github.com
             ```
 
             Or add to your `.npmrc`:
 
             ```
-            @${{ github.actor }}:registry=https://npm.pkg.github.com
+            ${{ github.repository_owner }}:registry=https://npm.pkg.github.com
             //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
             ```
 
-            Then install normally:
+            Then install:
 
             ```bash
-            npm install ${{ steps.package-info.outputs.name }}
+            npm install ${{ github.repository_owner }}/${{ steps.package-info.outputs.name }}
             ```
 
             ### What's New
@@ -174,4 +176,5 @@ jobs:
           echo ""
           echo "### 🔗 Links"
           echo "- **GitHub Packages**: https://github.com/${{ github.repository }}/packages"
+          echo "- **Install Command**: npm install ${{ github.repository_owner }}/${{ steps.package-info.outputs.name }} --registry=https://npm.pkg.github.com"
           echo "- **Release**: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.package-info.outputs.version }}"
