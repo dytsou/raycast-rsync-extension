@@ -97,7 +97,7 @@ jobs:
           # with the owner namespace. We'll temporarily modify package.json for publishing.
           cp package.json package.json.backup
           jq --arg owner "$OWNER" --arg name "$PACKAGE_NAME" \
-             '.name = ($owner + "/" + $name)' package.json > package.json.temp
+             '.name = ("@" + $owner + "/" + $name)' package.json > package.json.temp
           mv package.json.temp package.json
 
           # Publish to GitHub Packages with scoped name
