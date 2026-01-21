@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "raycast-rsync-extension",
-  "version": "1.0.3-beta.1",
+  "version": "1.0.3-beta.2",
   "title": "Rsync File Transfer",
   "description": "Transfer files between local and remote servers using rsync with SSH config integration",
   "icon": "icon.png",
