@@ -85,6 +85,9 @@
     "lint": "ray lint",
     "publish": "npx @raycast/api@latest publish",
     "test": "vitest --run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "publish:npm": "npm publish --access public"
   }
 }
