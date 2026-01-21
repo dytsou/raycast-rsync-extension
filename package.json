@@ -83,7 +83,6 @@
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
-    "publish": "npx @raycast/api@latest publish",
     "test": "vitest --run",
     "test:watch": "vitest",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
