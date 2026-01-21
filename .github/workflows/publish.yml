@@ -135,7 +135,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.package-info.outputs.version }}
-          name: Release v${{ steps.package-info.outputs.version }}
+          name: v${{ steps.package-info.outputs.version }}
           body: |
             ## ${{ steps.package-info.outputs.name }}@v${{ steps.package-info.outputs.version }}
 
