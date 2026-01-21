@@ -19,6 +19,7 @@ A Raycast extension for transferring files between local and remote servers usin
 ## Usage
 
 ### Upload Files
+
 1. Open Raycast and search for "Upload Files via Rsync"
 2. Select a host from your SSH config
 3. Choose local files to upload
@@ -26,6 +27,7 @@ A Raycast extension for transferring files between local and remote servers usin
 5. Confirm to start the transfer
 
 ### Download Files
+
 1. Open Raycast and search for "Download Files via Rsync"
 2. Select a host from your SSH config
 3. Enter the remote file path
