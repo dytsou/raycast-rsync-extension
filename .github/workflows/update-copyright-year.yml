@@ -1,0 +1,70 @@
+name: Update Copyright Year
+
+on:
+  schedule:
+    # Run on January 1st at 00:00 UTC every year
+    - cron: "0 0 1 1 *"
+  workflow_dispatch:
+
+jobs:
+  update-year:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+
+      - name: Get current year
+        id: year
+        run: |
+          YEAR=$(date +%Y)
+          echo "year=$YEAR" >> $GITHUB_OUTPUT
+          echo "Current year: $YEAR"
+
+      - name: Update LICENSE file
+        run: |
+          YEAR="${{ steps.year.outputs.year }}"
+          sed -i "s/Copyright (c) [0-9]\{4\}/Copyright (c) $YEAR/" LICENSE
+          echo "Updated LICENSE file (if needed)"
+
+      - name: Update Footer component (if present)
+        run: |
+          YEAR="${{ steps.year.outputs.year }}"
+          TARGET=""
+          if [ -f src/components/Footer.jsx ]; then
+            TARGET="src/components/Footer.jsx"
+          elif [ -f src/components/Footer.tsx ]; then
+            TARGET="src/components/Footer.tsx"
+          fi
+
+          if [ -n "$TARGET" ]; then
+            sed -i "s/\\(Round-Table Scheduler &copy; \\)[0-9]\\{4\\}/\\1$YEAR/" "$TARGET"
+            echo "Updated $TARGET file"
+          else
+            echo "Footer component not found; skipping footer update"
+          fi
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Changes detected:"
+            git status --short
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add LICENSE src/components/Footer.jsx src/components/Footer.tsx 2>/dev/null || true
+          git commit -m "chore: update copyright year to ${{ steps.year.outputs.year }}"
+          git push
