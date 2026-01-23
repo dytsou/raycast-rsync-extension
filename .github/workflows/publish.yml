@@ -66,17 +66,20 @@ jobs:
         run: |
           VERSION=${{ steps.package-info.outputs.version }}
           PACKAGE_NAME="${{ steps.package-info.outputs.name }}"
+          OWNER="${{ github.repository_owner }}"
+          SCOPED_NAME="@${OWNER}/${PACKAGE_NAME}"
 
           # Set up GitHub Packages registry
           npm config set registry https://npm.pkg.github.com
           npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
 
-          if npm view "$PACKAGE_NAME@$VERSION" version >/dev/null 2>&1; then
+          # Check if the scoped package version already exists
+          if npm view "${SCOPED_NAME}@${VERSION}" version >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Version $VERSION already exists, skipping publish"
+            echo "Version ${VERSION} already exists for ${SCOPED_NAME}, skipping publish"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Version $VERSION is new, will publish"
+            echo "Version ${VERSION} is new for ${SCOPED_NAME}, will publish"
           fi
         continue-on-error: true
 
