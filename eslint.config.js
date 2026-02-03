@@ -15,7 +15,7 @@ const compat = new FlatCompat({
 });
 
 module.exports = defineConfig([{
-    extends: "@raycast",
+    extends: ["@raycast"],
 }, {
     files: ["**/*.test.ts", "**/__mocks__/**", "**/__tests__/**"],
 
