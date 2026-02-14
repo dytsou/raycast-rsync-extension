@@ -66,6 +66,8 @@
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.1.1",
+    "@typescript-eslint/eslint-plugin": "^8.55.0",
+    "@typescript-eslint/parser": "^8.55.0",
     "@types/node": "^25.0.10",
     "@types/react": "19.0.10",
     "@vitest/ui": "^4.0.17",
@@ -79,10 +81,10 @@
     "@types/react": "19.0.10"
   },
   "scripts": {
-    "build": "ray build -e dist",
-    "dev": "ray develop",
-    "fix-lint": "ray lint --fix",
-    "lint": "ray lint",
+    "build": "npx ray build -e dist",
+    "dev": "npx ray develop",
+    "fix-lint": "npx ray lint --fix",
+    "lint": "npx ray lint",
     "test": "vitest --run",
     "test:watch": "vitest",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
