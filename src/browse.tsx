@@ -142,14 +142,43 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
       actions={
         <ActionPanel>
           <Action.SubmitForm title="Browse" onSubmit={handleSubmit} />
-          <Action.Push
+          <Action
             title="Browse Directory"
-            target={
-              <RemoteFileListLoader
-                hostConfig={hostConfig}
-                remotePath={remotePath}
-              />
-            }
+            onAction={async () => {
+              const remotePathValue = remotePath.trim() || "~";
+
+              const remoteValidation = validateRemotePath(remotePathValue);
+              if (!remoteValidation.valid) {
+                setRemotePathError(remoteValidation.error);
+                await showToast({
+                  style: Toast.Style.Failure,
+                  title: "Invalid Remote Path",
+                  message:
+                    remoteValidation.error ||
+                    "The remote path format is invalid",
+                });
+                return;
+              }
+
+              const hostValidation = validateHostConfig(hostConfig);
+              if (!hostValidation.valid) {
+                await showToast({
+                  style: Toast.Style.Failure,
+                  title: "Invalid Host Configuration",
+                  message:
+                    hostValidation.error ||
+                    "The host configuration is incomplete or invalid",
+                });
+                return;
+              }
+
+              push(
+                <RemoteFileListLoader
+                  hostConfig={hostConfig}
+                  remotePath={remotePathValue}
+                />,
+              );
+            }}
           />
         </ActionPanel>
       }

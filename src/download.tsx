@@ -6,6 +6,7 @@ import {
   showToast,
   Toast,
   popToRoot,
+  useNavigation,
 } from "@raycast/api";
 import React, { useState, useEffect } from "react";
 import { parseSSHConfig } from "./utils/sshConfig";
@@ -99,17 +100,46 @@ export default function Command() {
 function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
   const [remotePath, setRemotePath] = useState<string>("");
   const [remotePathError, setRemotePathError] = useState<string | undefined>();
+  const { push } = useNavigation();
+
+  async function handleSubmit(values: { remotePath: string }) {
+    const remotePathValue = values.remotePath.trim();
+
+    const remoteValidation = validateRemotePath(remotePathValue);
+    if (!remoteValidation.valid) {
+      console.error("Remote path validation failed:", remoteValidation.error);
+      setRemotePathError(remoteValidation.error);
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Invalid Remote Path",
+        message: remoteValidation.error || "The remote path format is invalid",
+      });
+      return;
+    }
+
+    const hostValidation = validateHostConfig(hostConfig);
+    if (!hostValidation.valid) {
+      console.error("Host config validation failed:", hostValidation.error);
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Invalid Host Configuration",
+        message:
+          hostValidation.error ||
+          "The host configuration is incomplete or invalid",
+      });
+      return;
+    }
+
+    push(
+      <LocalPathForm hostConfig={hostConfig} remotePath={remotePathValue} />,
+    );
+  }
 
   return (
     <Form
       actions={
         <ActionPanel>
-          <Action.Push
-            title="Continue"
-            target={
-              <LocalPathForm hostConfig={hostConfig} remotePath={remotePath} />
-            }
-          />
+          <Action.SubmitForm title="Continue" onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
