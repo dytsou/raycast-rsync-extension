@@ -1,3 +1,4 @@
+/// <reference path="../../raycast-env.d.ts" />
 import { getPreferenceValues } from "@raycast/api";
 import { RsyncOptions } from "../types/server";
 
