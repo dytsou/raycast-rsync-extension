@@ -71,7 +71,7 @@
     "@types/node": "^25.0.10",
     "@types/react": "19.0.10",
     "@vitest/ui": "^4.0.17",
-    "eslint": "^10.0.0",
+    "eslint": "^9.0.0",
     "prettier": "^3.8.0",
     "react": "^19.0.0",
     "typescript": "^5.2.2",
