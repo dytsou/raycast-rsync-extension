@@ -112,8 +112,7 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Remote Path",
-        message:
-          remoteValidation.error || "The remote path format is invalid",
+        message: remoteValidation.error || "The remote path format is invalid",
       });
       return;
     }
@@ -132,10 +131,7 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
     }
 
     push(
-      <LocalPathForm
-        hostConfig={hostConfig}
-        remotePath={remotePathValue}
-      />,
+      <LocalPathForm hostConfig={hostConfig} remotePath={remotePathValue} />,
     );
   }
 
@@ -143,10 +139,7 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm
-            title="Continue"
-            onSubmit={handleSubmit}
-          />
+          <Action.SubmitForm title="Continue" onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >

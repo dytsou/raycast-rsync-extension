@@ -98,7 +98,9 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
   const [remotePathError, setRemotePathError] = useState<string | undefined>();
   const { push } = useNavigation();
 
-  async function validateAndNavigate(remotePathValue: string): Promise<boolean> {
+  async function validateAndNavigate(
+    remotePathValue: string,
+  ): Promise<boolean> {
     const pathToUse = remotePathValue.trim() || "~";
 
     const remoteValidation = validateRemotePath(pathToUse);
@@ -108,8 +110,7 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
       await showToast({
         style: Toast.Style.Failure,
         title: "Invalid Remote Path",
-        message:
-          remoteValidation.error || "The remote path format is invalid",
+        message: remoteValidation.error || "The remote path format is invalid",
       });
       return false;
     }
@@ -128,10 +129,7 @@ function RemotePathForm({ hostConfig }: { hostConfig: SSHHostConfig }) {
     }
 
     push(
-      <RemoteFileListLoader
-        hostConfig={hostConfig}
-        remotePath={pathToUse}
-      />,
+      <RemoteFileListLoader hostConfig={hostConfig} remotePath={pathToUse} />,
     );
     return true;
   }
