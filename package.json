@@ -79,7 +79,7 @@
   },
   "overrides": {
     "@types/react": "19.0.10",
-    "minimatch": "^9.0.5"
+    "minimatch": "^10.2.1"
   },
   "scripts": {
     "build": "npx ray build -e dist",
