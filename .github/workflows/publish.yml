@@ -21,35 +21,24 @@ on:
           - major
 
 jobs:
-  publish:
+  check-version:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      packages: write
-      id-token: write
+      contents: read
+      packages: read
+    outputs:
+      exists: ${{ steps.check-version.outputs.exists }}
+      version: ${{ steps.package-info.outputs.version }}
+      name: ${{ steps.package-info.outputs.name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build extension
-        run: npm run build
 
       - name: Get package info
         id: package-info
@@ -81,13 +70,50 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "Version ${VERSION} is new for ${SCOPED_NAME}, will publish"
           fi
-        continue-on-error: true
+
+      - name: Skip summary
+        if: steps.check-version.outputs.exists == 'true'
+        run: |
+          echo "## 📦 Publish Summary"
+          echo "Package: ${{ steps.package-info.outputs.name }}@${{ steps.package-info.outputs.version }}"
+          echo "✅ Version already exists - skipped publishing (no tests/build run)"
+
+  publish:
+    needs: check-version
+    if: needs.check-version.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build extension
+        run: npm run build
 
       - name: Publish to GitHub Packages
-        if: steps.check-version.outputs.exists == 'false'
         run: |
-          PACKAGE_NAME="${{ steps.package-info.outputs.name }}"
-          VERSION=${{ steps.package-info.outputs.version }}
+          PACKAGE_NAME="${{ needs.check-version.outputs.name }}"
+          VERSION=${{ needs.check-version.outputs.version }}
           OWNER="${{ github.repository_owner }}"
 
           echo "Publishing $PACKAGE_NAME@$VERSION to GitHub Packages..."
@@ -114,10 +140,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Git tag
-        if: steps.check-version.outputs.exists == 'false'
         run: |
-          VERSION=${{ steps.package-info.outputs.version }}
-          PACKAGE_NAME="${{ steps.package-info.outputs.name }}"
+          VERSION=${{ needs.check-version.outputs.version }}
+          PACKAGE_NAME="${{ needs.check-version.outputs.name }}"
 
           TAG_NAME="v$VERSION"
 
@@ -134,20 +159,19 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        if: steps.check-version.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.package-info.outputs.version }}
-          name: v${{ steps.package-info.outputs.version }}
+          tag_name: v${{ needs.check-version.outputs.version }}
+          name: v${{ needs.check-version.outputs.version }}
           body: |
-            ## ${{ steps.package-info.outputs.name }}@v${{ steps.package-info.outputs.version }}
+            ## ${{ needs.check-version.outputs.name }}@v${{ needs.check-version.outputs.version }}
 
             **Published to GitHub Packages**
 
             ### Installation
 
             ```bash
-            npm install @${{ github.repository_owner }}/${{ steps.package-info.outputs.name }} --registry=https://npm.pkg.github.com
+            npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }} --registry=https://npm.pkg.github.com
             ```
 
             Or add to your `.npmrc`:
@@ -160,7 +184,7 @@ jobs:
             Then install:
 
             ```bash
-            npm install @${{ github.repository_owner }}/${{ steps.package-info.outputs.name }}
+            npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }}
             ```
 
             ### What's New
@@ -175,23 +199,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Summary
-        if: always()
         run: |
           echo "## 📦 Publish Summary"
-          echo "Package: ${{ steps.package-info.outputs.name }}@${{ steps.package-info.outputs.version }}"
-
-          if [ "${{ steps.check-version.outputs.exists }}" == "true" ]; then
-            echo "✅ Version already exists - skipped publishing"
-          elif [ "${{ steps.check-version.outputs.exists }}" == "false" ]; then
-            echo "✅ Successfully published to GitHub Packages"
-            echo "🏷️  Created tag: v${{ steps.package-info.outputs.version }}"
-            echo "📝 Created release: v${{ steps.package-info.outputs.version }}"
-          else
-            echo "❌ Publish status unknown"
-          fi
-
+          echo "Package: ${{ needs.check-version.outputs.name }}@${{ needs.check-version.outputs.version }}"
+          echo "✅ Successfully published to GitHub Packages"
+          echo "🏷️  Created tag: v${{ needs.check-version.outputs.version }}"
+          echo "📝 Created release: v${{ needs.check-version.outputs.version }}"
           echo ""
           echo "### 🔗 Links"
           echo "- **GitHub Packages**: https://github.com/${{ github.repository }}/packages"
-          echo "- **Install Command**: npm install @${{ github.repository_owner }}/${{ steps.package-info.outputs.name }} --registry=https://npm.pkg.github.com"
-          echo "- **Release**: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.package-info.outputs.version }}"
+          echo "- **Install Command**: npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }} --registry=https://npm.pkg.github.com"
+          echo "- **Release**: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.version }}"
