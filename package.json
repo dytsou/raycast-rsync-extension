@@ -66,19 +66,20 @@
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.1.1",
+    "@testing-library/jest-dom": "^6.9.1",
     "@types/node": "^25.0.10",
-    "@types/react": "19.0.10",
+    "@types/react": "19.2.14",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
     "@typescript-eslint/parser": "^8.56.0",
     "@vitest/ui": "^4.0.17",
     "eslint": "^10.0.0",
     "prettier": "^3.8.0",
     "react": "^19.0.0",
-    "typescript": "^5.2.2",
+    "typescript": "^6.0.2",
     "vitest": "^4.0.17"
   },
   "overrides": {
-    "@types/react": "19.0.10",
+    "@types/react": "19.2.14",
     "minimatch": "^10.2.1"
   },
   "scripts": {
