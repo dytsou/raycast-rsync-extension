@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Rebase
-        uses: bbeesley/gha-auto-dependabot-rebase@63e00ca8c397e0ca4a81ca6495de44f3af026e3f
+        uses: bbeesley/gha-auto-dependabot-rebase@ff7a394846bc53646111f93e7809cb038755deb9
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PA_TOKEN }}
         with:
