@@ -2,7 +2,7 @@ const raycastConfig = require("@raycast/eslint-config");
 
 // Flatten in case any imported configs are arrays (e.g., prettier flat config)
 const baseConfigs = raycastConfig.flatMap((config) =>
-  Array.isArray(config) ? config : [config]
+  Array.isArray(config) ? config : [config],
 );
 
 module.exports = [
