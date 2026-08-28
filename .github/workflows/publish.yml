@@ -184,10 +184,16 @@ jobs:
           body: |
             ## ${{ needs.check-version.outputs.name }}@v${{ needs.check-version.outputs.version }}
 
-            **Published to GitHub Packages**
+            **Published to GitHub Packages and npmjs**
 
             ### Installation
 
+            **npmjs** (recommended):
+            ```bash
+            npm install raycast-rsync-extension
+            ```
+
+            **GitHub Packages**:
             ```bash
             npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }} --registry=https://npm.pkg.github.com
             ```
@@ -202,7 +208,7 @@ jobs:
             Then install:
 
             ```bash
-            npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }}
+            npm install ${{ needs.check-version.outputs.name }}
             ```
 
             ### What's New
@@ -218,15 +224,15 @@ jobs:
 
       - name: Publish Summary
         run: |
-          echo "## 📦 Publish Summary"
+          echo "## Publish Summary"
           echo "Package: ${{ needs.check-version.outputs.name }}@${{ needs.check-version.outputs.version }}"
-          echo "✅ Successfully published to GitHub Packages and npmjs"
-          echo "🏷️  Created tag: v${{ needs.check-version.outputs.version }}"
-          echo "📝 Created release: v${{ needs.check-version.outputs.version }}"
+          echo "Successfully published to GitHub Packages and npmjs"
+          echo "Created tag: v${{ needs.check-version.outputs.version }}"
+          echo "Created release: v${{ needs.check-version.outputs.version }}"
           echo ""
           echo "### 🔗 Links"
-          echo "- **npmjs**: https://www.npmjs.com/package/@${{ github.repository_owner }}/${{ needs.check-version.outputs.name }}"
+          echo "- **npmjs**: https://www.npmjs.com/package/${{ needs.check-version.outputs.name }}"
           echo "- **GitHub Packages**: https://github.com/${{ github.repository }}/packages"
-          echo "- **Install Command (npmjs)**: npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }}"
+          echo "- **Install Command (npmjs)**: npm install ${{ needs.check-version.outputs.name }}"
           echo "- **Install Command (GitHub Packages)**: npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }} --registry=https://npm.pkg.github.com"
           echo "- **Release**: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.version }}"
