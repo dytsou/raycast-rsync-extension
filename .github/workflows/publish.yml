@@ -145,22 +145,15 @@ jobs:
           VERSION=${{ needs.check-version.outputs.version }}
           OWNER="${{ github.repository_owner }}"
 
-          echo "Publishing @$OWNER/$PACKAGE_NAME@$VERSION to npmjs..."
+          echo "Publishing $PACKAGE_NAME@$VERSION to npmjs..."
 
           npm config set @dytsou:registry https://registry.npmjs.org
           npm config set registry https://registry.npmjs.org
           npm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN"
 
-          cp package.json package.json.backup
-          jq --arg owner "$OWNER" --arg name "$PACKAGE_NAME" \
-             '.name = ("@" + $owner + "/" + $name) | .repository = {type:"git", url:("git+https://github.com/" + $owner + "/" + $name + ".git")}' package.json > package.json.temp
-          mv package.json.temp package.json
-
           npm publish --access public --registry=https://registry.npmjs.org
 
-          mv package.json.backup package.json
-
-          echo "Successfully published @$OWNER/$PACKAGE_NAME@$VERSION to npmjs"
+          echo "Successfully published $PACKAGE_NAME@$VERSION to npmjs"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
