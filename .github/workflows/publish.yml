@@ -1,4 +1,4 @@
-name: Publish to GitHub Packages
+name: Publish to npmjs & GitHub Packages
 
 on:
   push:
@@ -8,92 +8,33 @@ on:
       - "package.json"
       - "package-lock.json"
       - "src/**"
+  release:
+    types: [created]
   workflow_dispatch:
-    inputs:
-      version_bump:
-        description: "Version bump type (patch, minor, major)"
-        required: false
-        default: "patch"
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
+
+permissions:
+  contents: read
 
 jobs:
-  check-version:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    outputs:
-      exists: ${{ steps.check-version.outputs.exists }}
-      version: ${{ steps.package-info.outputs.version }}
-      name: ${{ steps.package-info.outputs.name }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Get package info
-        id: package-info
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          NAME=$(node -p "require('./package.json').name")
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "name=$NAME" >> $GITHUB_OUTPUT
-          echo "Package: $NAME@$VERSION"
-
-      - name: Check if version exists
-        id: check-version
-        run: |
-          VERSION=${{ steps.package-info.outputs.version }}
-          PACKAGE_NAME="${{ steps.package-info.outputs.name }}"
-          OWNER="${{ github.repository_owner }}"
-          SCOPED_NAME="@${OWNER}/${PACKAGE_NAME}"
-
-          # Set up GitHub Packages registry
-          npm config set registry https://npm.pkg.github.com
-          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
-
-          # Check if the scoped package version already exists
-          if npm view "${SCOPED_NAME}@${VERSION}" version >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Version ${VERSION} already exists for ${SCOPED_NAME}, skipping publish"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Version ${VERSION} is new for ${SCOPED_NAME}, will publish"
-          fi
-
-      - name: Skip summary
-        if: steps.check-version.outputs.exists == 'true'
-        run: |
-          echo "## 📦 Publish Summary"
-          echo "Package: ${{ steps.package-info.outputs.name }}@${{ steps.package-info.outputs.version }}"
-          echo "✅ Version already exists - skipped publishing (no tests/build run)"
-
   publish:
-    needs: check-version
-    if: needs.check-version.outputs.exists == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
       id-token: write
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
           cache: "npm"
@@ -101,106 +42,83 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
       - name: Run tests
         run: npm test
 
       - name: Build extension
         run: npm run build
 
-      - name: Publish to GitHub Packages
-        run: |
-          PACKAGE_NAME="${{ needs.check-version.outputs.name }}"
-          VERSION=${{ needs.check-version.outputs.version }}
-          OWNER="${{ github.repository_owner }}"
-
-          echo "Publishing $PACKAGE_NAME@$VERSION to GitHub Packages..."
-
-          # Configure npm to use GitHub Packages registry
-          npm config set registry https://npm.pkg.github.com
-          npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
-
-          # For unscoped packages, GitHub Packages requires the package to be published
-          # with the owner namespace. We'll temporarily modify package.json for publishing.
-          cp package.json package.json.backup
-          jq --arg owner "$OWNER" --arg name "$PACKAGE_NAME" \
-             '.name = ("@" + $owner + "/" + $name)' package.json > package.json.temp
-          mv package.json.temp package.json
-
-          # Publish to GitHub Packages with scoped name
-          npm publish
-
-          # Restore original package.json
-          mv package.json.backup package.json
-
-          echo "Successfully published $OWNER/$PACKAGE_NAME@$VERSION to GitHub Packages"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      # npm-only repo: skip pnpm install/pack; publish with already-installed node_modules.
       - name: Publish to npmjs
+        id: npmjs
+        uses: dytsou/release/npm-publish@2096b0a3163d8d77127c0e276fc1cda7da3c63e2 # v1.2.0 (@v1)
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          install-deps: "false"
+          verify-pack: "false"
+          node-version: "22"
+
+      # GitHub Packages requires a scoped name; temporarily rewrite package.json.
+      - name: Scope package name for GitHub Packages
         run: |
-          PACKAGE_NAME="${{ needs.check-version.outputs.name }}"
-          VERSION=${{ needs.check-version.outputs.version }}
-          OWNER="${{ github.repository_owner }}"
+          set -euo pipefail
+          cp package.json package.json.backup
+          jq --arg owner "${{ github.repository_owner }}" --arg name "$(node -p "require('./package.json').name")" \
+            '.name = ("@" + $owner + "/" + $name)' package.json > package.json.tmp
+          mv package.json.tmp package.json
 
-          echo "Publishing $PACKAGE_NAME@$VERSION to npmjs..."
+      - name: Publish to GitHub Packages
+        id: ghpkg
+        uses: dytsou/release/github-packages@2096b0a3163d8d77127c0e276fc1cda7da3c63e2 # v1.2.0 (@v1)
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          install-deps: "false"
+          verify-pack: "false"
+          node-version: "22"
 
-          npm config set @dytsou:registry https://registry.npmjs.org
-          npm config set registry https://registry.npmjs.org
-          npm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN"
-
-          npm publish --access public --registry=https://registry.npmjs.org
-
-          echo "Successfully published $PACKAGE_NAME@$VERSION to npmjs"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Create Git tag
+      - name: Restore package.json
+        if: always()
         run: |
-          VERSION=${{ needs.check-version.outputs.version }}
-          PACKAGE_NAME="${{ needs.check-version.outputs.name }}"
-
-          TAG_NAME="v$VERSION"
-
-          # Check if tag already exists
-          if git tag -l | grep -q "^$TAG_NAME$"; then
-            echo "Tag $TAG_NAME already exists, skipping tag creation"
-          else
-            echo "Creating tag $TAG_NAME"
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git tag "$TAG_NAME"
-            git push origin "$TAG_NAME"
-            echo "Tag $TAG_NAME created and pushed"
+          if [ -f package.json.backup ]; then
+            mv package.json.backup package.json
           fi
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+      - name: GitHub Release
+        if:
+          steps.npmjs.outputs.published == 'true' ||
+          steps.ghpkg.outputs.published == 'true'
+        uses: dytsou/release/github@2096b0a3163d8d77127c0e276fc1cda7da3c63e2 # v1.2.0 (@v1)
         with:
-          tag_name: v${{ needs.check-version.outputs.version }}
-          name: v${{ needs.check-version.outputs.version }}
+          from-package-json: "true"
+          move-major-tag: "false"
           body: |
-            ## ${{ needs.check-version.outputs.name }}@v${{ needs.check-version.outputs.version }}
+            ## ${{ steps.npmjs.outputs.name }}@${{ steps.npmjs.outputs.version }}
 
-            **Published to GitHub Packages and npmjs**
+            **Published to multiple registries:**
+
+            - **npmjs.com**: https://www.npmjs.com/package/${{ steps.npmjs.outputs.name }}
+
+            - **GitHub Packages**: https://github.com/${{ github.repository }}/packages
+
+            *Note: If a registry already had this version, it was skipped. Only missing registries were published.*
 
             ### Installation
 
-            **npmjs** (recommended):
+            **From npmjs (recommended):**
+
             ```bash
-            npm install raycast-rsync-extension
+            npm install ${{ steps.npmjs.outputs.name }}
             ```
 
-            **GitHub Packages**:
+            **From GitHub Packages:**
+
             ```bash
-            npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }} --registry=https://npm.pkg.github.com
+            npm install @${{ github.repository_owner }}/${{ steps.npmjs.outputs.name }} --registry=https://npm.pkg.github.com
             ```
 
             Or add to your `.npmrc`:
 
-            ```
+            ```ini
             @${{ github.repository_owner }}:registry=https://npm.pkg.github.com
             //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
             ```
@@ -208,31 +126,27 @@ jobs:
             Then install:
 
             ```bash
-            npm install ${{ needs.check-version.outputs.name }}
+            npm install @${{ github.repository_owner }}/${{ steps.npmjs.outputs.name }}
             ```
 
-            ### What's New
-
-            - Automated release from CI/CD pipeline
-            - All tests passed ✅
-            - Extension built successfully ✅
-
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish Summary
+      - name: Publish summary
+        if: always()
         run: |
           echo "## Publish Summary"
-          echo "Package: ${{ needs.check-version.outputs.name }}@${{ needs.check-version.outputs.version }}"
-          echo "Successfully published to GitHub Packages and npmjs"
-          echo "Created tag: v${{ needs.check-version.outputs.version }}"
-          echo "Created release: v${{ needs.check-version.outputs.version }}"
+          echo "### npmjs"
+          if [ "${{ steps.npmjs.outputs.skipped }}" == "true" ]; then
+            echo "Skipped - version already exists"
+          elif [ "${{ steps.npmjs.outputs.published }}" == "true" ]; then
+            echo "Published successfully"
+          else
+            echo "Not published"
+          fi
           echo ""
-          echo "### 🔗 Links"
-          echo "- **npmjs**: https://www.npmjs.com/package/${{ needs.check-version.outputs.name }}"
-          echo "- **GitHub Packages**: https://github.com/${{ github.repository }}/packages"
-          echo "- **Install Command (npmjs)**: npm install ${{ needs.check-version.outputs.name }}"
-          echo "- **Install Command (GitHub Packages)**: npm install @${{ github.repository_owner }}/${{ needs.check-version.outputs.name }} --registry=https://npm.pkg.github.com"
-          echo "- **Release**: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.version }}"
+          echo "### GitHub Packages"
+          if [ "${{ steps.ghpkg.outputs.skipped }}" == "true" ]; then
+            echo "Skipped - version already exists"
+          elif [ "${{ steps.ghpkg.outputs.published }}" == "true" ]; then
+            echo "Published successfully"
+          else
+            echo "Not published"
+          fi
