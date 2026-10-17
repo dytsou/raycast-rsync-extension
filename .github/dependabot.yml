@@ -13,6 +13,10 @@ updates:
     commit-message:
       prefix: "chore(deps):"
       include: "scope"
+    # @raycast/eslint-config peers typescript >=4.8.4 <6.1.0 — keep Dependabot off that range
+    ignore:
+      - dependency-name: "typescript"
+        versions: [">=6.1.0"]
     # Group updates to reduce PR noise
     groups:
       production-dependencies:
