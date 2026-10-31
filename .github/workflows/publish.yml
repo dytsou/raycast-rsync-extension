@@ -69,7 +69,7 @@ jobs:
 
       - name: Publish to GitHub Packages
         id: ghpkg
-        uses: dytsou/release/github-packages@f4ac7961c8c67fc6887ce2265a19d01929960ce5 # v1.3.5 (@v1)
+        uses: dytsou/release/github-packages@98055479dc1f0015d278ecd26b54ec6897d85eed # v1.3.5 (@v1)
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           install-deps: "false"
