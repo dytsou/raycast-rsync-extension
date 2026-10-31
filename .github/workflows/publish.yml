@@ -51,7 +51,7 @@ jobs:
       # npm-only repo: skip pnpm install/pack; publish with already-installed node_modules.
       - name: Publish to npmjs
         id: npmjs
-        uses: dytsou/release/npm-publish@f4ac7961c8c67fc6887ce2265a19d01929960ce5 # v1.3.5 (@v1)
+        uses: dytsou/release/npm-publish@98055479dc1f0015d278ecd26b54ec6897d85eed # v1.3.5 (@v1)
         with:
           npm-token: ${{ secrets.NPM_TOKEN }}
           install-deps: "false"
