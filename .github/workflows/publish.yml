@@ -18,6 +18,8 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Must match the environment name in the npm Trusted Publisher configuration.
+    environment: npm
     permissions:
       contents: write
       packages: write
@@ -51,12 +53,13 @@ jobs:
       # npm-only repo: skip pnpm install/pack; publish with already-installed node_modules.
       - name: Publish to npmjs
         id: npmjs
-        uses: dytsou/release/npm-publish@8f7fea93ecc68f2c18d5d51a9d194bbb19b49004 # v1.3.5 (@v1)
+        uses: dytsou/release/npm-publish@2cd0db49a208aa8c039390cfc94f9ca8222ff86e # v1.4.1
         with:
-          npm-token: ${{ secrets.NPM_TOKEN }}
           install-deps: "false"
           verify-pack: "false"
           node-version: "22"
+          # No packageManager field in this npm project; pin pnpm 12 for the OIDC publish path.
+          pnpm-version: "12.20.0"
 
       # GitHub Packages requires a scoped name; temporarily rewrite package.json.
       - name: Scope package name for GitHub Packages
@@ -69,7 +72,7 @@ jobs:
 
       - name: Publish to GitHub Packages
         id: ghpkg
-        uses: dytsou/release/github-packages@8f7fea93ecc68f2c18d5d51a9d194bbb19b49004 # v1.3.5 (@v1)
+        uses: dytsou/release/github-packages@2cd0db49a208aa8c039390cfc94f9ca8222ff86e # v1.4.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           install-deps: "false"
